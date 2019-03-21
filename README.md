@@ -16,7 +16,7 @@ Bottle is a browser that lets you surf the Bitcoin network for these things, and
 
 Note that the address bar below uses a b:// address:, not HTTP or HTTPS. This HTML file is 100% hosted and served from the Bitcoin blockchain, and has nothing to do with where a "server" is located.
 
-![bottle_html](./bottle_html.png)
+![bottle_html](./bottle_html.jpg)
 
 # Download
 
