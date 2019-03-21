@@ -1,0 +1,151 @@
+<html>
+<head>
+<style>
+body {
+  font-family: Arial;
+  font-size: 12px;
+}
+.container {
+  padding: 50px; 
+  margin: 0 auto;
+  max-width: 800px;
+}
+.container input {
+  padding: 8px;
+  font-size: 14px;
+  width: 100%;
+}
+.row label {
+  padding: 5px 2px;
+  display: block;
+  font-size: 12px;
+}
+.row {
+  padding: 20px 0;
+  border-top: 1px solid rgba(0,0,0,0.1);
+}
+pre {
+  background: rgba(0,0,0,0.8);
+  color: white;
+  padding: 5px;
+}
+h3 {
+  margin: 5px 0;
+}
+button:focus, input:focus {
+  outline: none;
+}
+button {
+  background: gold;
+  padding: 10px 50px;
+  font-weight: bold;
+  border-radius: 3px;
+  border: none;
+}
+button.selected {
+  background: silver;
+}
+</style>
+<script>
+const fs = require('fs')
+const path = require('path')
+const {remote, ipcRenderer} = require('electron')
+const dirname = remote.app.getAppPath()
+const userPath = remote.app.getPath("userData")
+document.addEventListener("DOMContentLoaded", function(e) {
+  let fields = {
+    b: document.querySelector("input.b"),
+    c: document.querySelector("input.c"),
+    //whitelist: document.querySelector("input.whitelist"),
+  }
+  var p = path.join(userPath, '.', 'settings.json');
+  var content
+  fs.readFile(p, (err, data) => {
+    if(data){
+      try {
+        content = JSON.parse(data) 
+        if (content.b) {
+          fields.b.value = content.b
+        }
+        if (content.c) {
+          fields.c.value = content.c
+        }
+        /*
+        if (content.whitelist) {
+          fields.whitelist.value = content.whitelist
+        }
+        */
+      } catch (e) {
+        console.log("Error", e)
+      }
+    } else {
+      let stubPath = path.join(dirname, '.', 'settings.json');
+      fs.readFile(stubPath, (err, data) => {
+        if(data){
+          try {
+            content = JSON.parse(data) 
+            if (content.b) {
+              fields.b.value = content.b
+            }
+            if (content.c) {
+              fields.c.value = content.c
+            }
+            /*
+            if (content.whitelist) {
+              fields.whitelist.value = content.whitelist
+            }
+            */
+          } catch (e) {
+            console.log("Error", e)
+          }
+        }
+      })
+    }
+  })
+  document.querySelector(".container").addEventListener("change", function(e) {
+    let className = e.target.className
+    if (e.target.value) {
+      content[className] = e.target.value.trim()
+    }
+  })
+  document.querySelector("#refresh").addEventListener("click", function(e) {
+    let st = JSON.stringify(content, null, 2)
+    fs.writeFile(p, st, (err, data) => {
+      ipcRenderer.send('refresh-settings');
+      e.target.classList.add("selected")
+    })
+  })
+})
+</script>
+</head>
+<body>
+<div class='container'>
+<h1>Settings</h1>
+<div class='row'>
+<h3>B:// endpoint</h3>
+<div>Pick one from following list:</div>
+<pre>
+https://bico.media/${key}
+https://dyn.bitcoinfiles.org/${key}
+https://api.bitpaste.app/file/${key}.html
+</pre>
+<input type='text' placeholder='Enter B:// host endpoint' class='b'>
+</div>
+<div class='row'>
+<h3>C:// endpoint</h3>
+<div>Pick one from following list:</div>
+<pre>
+https://data.bitdb.network/1KuUr2pSJDao97XM8Jsq8zwLS6W1WtFfLg/c/${key}
+</pre>
+<input type='text' placeholder='Enter C:// host endpoint' class='c'>
+</div>
+<!--
+<div class='row'>
+<h3>Whitelisted HTTP hosts</h3>
+<input type='text' placeholder='Enter comma-separated whitelisted HTTP hosts' class='whitelist'>
+</div>
+-->
+<button value='refresh' id='refresh'>Apply</button>
+</div>
+</body>
+</html>

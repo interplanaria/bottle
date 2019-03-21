@@ -1,0 +1,269 @@
+<html>
+<head>
+<style>
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow: auto;
+}
+.hidden {
+  display: none !important;
+}
+body {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  font-family: arial;
+  font-size: 14px;
+  color: rgba(0,0,0,0.8);
+  overflow: auto;
+}
+header {
+  padding: 5px;
+  background: whitesmoke;
+}
+input[type=text] {
+  padding: 8px;
+  margin: 10px 5px 0;
+  box-sizing: border-box;
+  flex-grow: 1;
+  border: 1px solid rgba(0,0,0,0.2);
+}
+input[type=text]:focus {
+  outline: none;
+}
+.content {
+  overflow: auto;
+  flex-grow: 1;
+  display: flex;
+}
+#sidebar {
+  box-sizing: border-box;
+  width: 200px;
+  flex-shrink: 0;
+  border-right: 2px solid whitesmoke;
+  overflow: auto;
+}
+#sidebar .container {
+  margin-top: 10px;
+}
+#sidebar form {
+  flex-grow: 1;
+}
+#detail {
+  flex-grow: 1;
+  flex-shrink: 0;
+  /*
+  max-width: 300px;
+  */
+  box-sizing: border-box;
+  overflow: auto;
+  border-right: 2px solid whitesmoke;
+}
+#detail:empty {
+  border: none;
+}
+#detail .item {
+  font-size: 12px;
+}
+#detail input[type=text] {
+  width: 500px;
+  box-sizing: border-box;
+}
+#frame {
+  flex-grow: 1;
+  border: none;
+}
+.item {
+  display: block;
+  color: rgba(0,0,0,0.8);
+  text-decoration: none;
+  padding: 10px;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+}
+.item[data-state=unconfirmed] {
+  opacity: 0.5;
+}
+.item .button {
+  display: inline-block;
+  margin: 5px 5px 0 0;
+  padding: 2px 10px;
+  background: rgba(0,0,0,0.8);
+  text-decoration: none;
+  color: white;
+}
+.item .name {
+  font-weight: bold;
+  font-size:12px;
+  line-height:20px;
+}
+.item .meta {
+  color: rgba(0,0,0,0.8);
+}
+#bookmark, #write {
+  padding: 10px 5px;
+  display: block;
+  font-size: 14px;
+  line-height: 18px;
+  text-decoration: none;
+  cursor: pointer;
+  background: rgba(0,0,0,0.04);
+  color: rgba(0,0,0,0.8);
+}
+#bookmark img , #write img{
+  height: 14px;
+  vertical-align: text-bottom;
+  margin-right: 5px;
+  display: inline-block;
+}
+.row {
+  display: flex;
+  cursor: pointer;
+  padding: 5px;
+}
+.row.selected {
+  background: rgba(0,0,0,0.1);
+}
+.row .name {
+  display: block;
+}
+.row .flexible {
+  flex-grow: 1;
+}
+h1 {
+  margin: 0;
+  padding: 10px;
+}
+</style>
+<script>
+const {remote} = require('electron')
+const dirname = remote.app.getAppPath()
+var timeago = require('timeago.js')
+var get = function(o) {
+  let f
+  if (o.type) {
+    if (o.type === 'all') {
+      f = { }
+    } else {
+      f = {
+        "out.s3": {
+          "$regex": o.type,
+          "$options": "i"
+        }
+      }
+    }
+  } else if (o.search) {
+    f = {
+      "$text": {
+        "$search": o.search
+      }
+    }
+  }
+	var query = {
+		"v": 3,
+		"q": {
+			"find": f,
+			"project": {
+				"c": 1,
+				"tx": 1,
+				"in.e": 1,
+				"out.s3": 1,
+				"out.s4": 1,
+				"out.s5": 1,
+        "blk": 1
+			},
+      "limit": 200
+		},
+		"r": {
+			"f": "[ .[] | { blk: .blk, c: .c, b: .tx.h, out: .out }]"
+		}
+	}
+	var b64 = btoa(JSON.stringify(query));
+	var url = "https://data.bitdb.network/q/1KuUr2pSJDao97XM8Jsq8zwLS6W1WtFfLg/" + b64;
+	var header = {
+		headers: { key: "16JaLJ8b5UvQp355Gva2qhuTS65NkowhPr" }
+	};
+
+	fetch(url, header).then(function(r) {
+		return r.json()
+	}).then(function(r) {
+		let items = r.u.concat(r.c)
+		let html = items.map(function(item) {
+      return "<div class='item' data-state='" + (item.blk ? "confirmed" : "unconfirmed") + "' data-url='c://" + item.c + "'>" +
+        "<div class='name'>" + (item.out[0].s5 ? item.out[0].s5.slice(0, 200) : "c://" + item.c) + "</div>" +
+        //"<div class='flexible'></div>" +
+        "<div class='meta'>" + item.out[0].s3 + " - " + (item.blk ? "block " + item.blk.i + " (" + timeago.format(item.blk.t * 1000) + ")" : "unconfirmed") + "</div>" +
+        "<a target='_blank' class='button' href='b://" + item.b + "'>b://</a>" +
+        "<a target='_blank' class='button' href='c://" + item.c + "'>c://</a>" +
+      "</div>"
+    }).join("")
+    document.querySelector("#detail .list").innerHTML = html
+    document.querySelector("#frame").classList.add("hidden")
+    document.querySelector("#detail").classList.remove("hidden")
+	})
+}
+document.addEventListener("DOMContentLoaded", function(e) {
+  var types = ["all", "image", "video", "audio", "text", "html", "markdown", "json", "xml", "javascript", "css", "pdf", "mp4", "mp3"]
+  var sidebar_content = types.map(function(type) {
+    return "<a class='row' id='" + type + "'>" + type + "</a>"
+  }).join("")
+  document.querySelector("#frame").setAttribute("src", "https://bottle.bitdb.network/home.html")
+  document.querySelector("#sidebar .container").innerHTML = sidebar_content;
+  document.querySelector("#bookmark").setAttribute("href", "file:///" + dirname + "/bookmark.html")
+  document.querySelector("#bookmark img").setAttribute("src", "file:///" + dirname + "/star.png")
+  document.querySelector("#write").setAttribute("href", "file:///" + dirname + "/write.html")
+  document.querySelector("#write img").setAttribute("src", "file:///" + dirname + "/write.png")
+  document.querySelector("#sidebar .container").addEventListener("click", function(e) {
+    document.querySelectorAll("#sidebar .row").forEach(function(el) {
+      el.classList.remove("selected")
+    })
+    if (e.target.className === 'row') {
+      e.target.classList.add("selected")
+      get({type: e.target.id})
+    } else {
+      var p = e.target.closest(".row")
+      if (p) {
+        p.classList.add("selected")
+        get({type: p.id})
+      }
+    }
+  })
+  document.querySelector("form").addEventListener("submit", function(e) {
+    let val = e.target.querySelector("input[type=text]").value
+    e.stopPropagation()
+    e.preventDefault()
+    get({search: val})
+  })
+  document.querySelector("#detail .list").addEventListener("click", function(e) {
+    document.querySelectorAll("#detail .row").forEach(function(el) {
+      el.classList.remove("selected")
+    })
+    if (e.target.className === 'row') {
+      e.target.classList.add("selected")
+      var url = e.target.dataset.url
+    } else {
+      var p = e.target.closest(".row")
+      if (p) {
+        var url = p.dataset.url
+        p.classList.add("selected")
+      }
+    }
+  })
+})
+</script>
+</head>
+<body>
+<div class='content'>
+  <div id='sidebar'>
+    <form><input type='text' placeholder="Search"></form>
+    <a id='bookmark'><img>Bookmark</a>
+    <a id='write' target='_blank'><img>Write</a>
+    <div class='container'></div>
+  </div>
+  <div id='detail' class='hidden'>
+    <div class='list'></div>
+  </div>
+  <iframe name='frame' id='frame'></iframe>
+</div>
+</body>
+</html>

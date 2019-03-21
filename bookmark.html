@@ -1,0 +1,116 @@
+<html>
+<head>
+<style>
+body {
+  margin: 0;
+  font-family: arial;
+}
+.container {
+  width: 800px;
+  margin: 0 auto;
+}
+.container input[type=text]:focus {
+  outline: none;
+}
+.container input[type=text] {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px;
+  margin: 5px 0;
+}
+.form {
+  margin: 20px;
+  padding: 50px;
+  background: rgba(0,0,0,0.03);
+}
+h2 {
+  margin: 0;
+}
+button {
+  background: gold;
+  padding: 10px 50px;
+  color: black;
+  border-radius: 2px;
+  border: none;
+}
+.row {
+  margin: 20px;
+  padding: 10px;
+}
+.row .name {
+  font-weight: bold;
+  font-size: 14px;
+}
+.row a.url {
+  color: silver;
+  font-size: 12px;
+}
+.row .description {
+  font-size: 12px;
+}
+</style>
+<script>
+const fs = require('fs')
+const path = require('path')
+const {remote} = require('electron')
+const dirname = remote.app.getAppPath()
+const userPath = remote.app.getPath("userData")
+var vars = {};
+var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {
+    vars[key] = value;
+});
+var p = path.join(userPath, '.', 'bookmark.json');
+var items = []
+var read = function() {
+  fs.readFile(p, (err, data) => {
+    if(data){
+      try {
+        items = JSON.parse(data) 
+        if (items && Array.isArray(items) && items.length > 0) {
+          let d = items.map(function(item) {
+            return `<div class='row'>
+              <div class='name'>${item.name}</div>
+              <a class='url' href='${item.url}'>${item.url}</a>
+              <div class='description'>${item.description}</div>
+            </div>`
+          }).join("")
+          document.querySelector(".rows").innerHTML = d
+        }
+      } catch (e) {
+      }
+    }
+  })
+}
+document.addEventListener("DOMContentLoaded", function(e) {
+  if (vars && vars.url) {
+    document.querySelector("#url").value = vars.url
+  }
+  document.querySelector("button#save").addEventListener("click", function(e) {
+    let o = {
+      name: document.querySelector("#name").value,
+      description: document.querySelector("#description").value,
+      url: document.querySelector("#url").value,
+    }
+    items.push(o)
+    fs.writeFile(p, JSON.stringify(items, null, 2), (err, data) => {
+      read()
+    })
+  })
+  read()
+})
+</script>
+</head>
+<body>
+<div class='container'>
+  <div class='form'>
+    <h2>Bookmark</h2>
+    <input id='url' type='text' placeholder='enter url'>
+    <input id='name' type='text' placeholder='enter name'>
+    <input id='description' type='text' placeholder='enter description'>
+    <button id='save' value='save'>Save</button>
+  </div>
+  <div class='rows'>
+  </div>
+</div>
+</body>
+</html>
