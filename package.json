@@ -12,7 +12,11 @@
     "electron-navigation": "^1.5.8",
     "mime-types": "^2.1.22",
     "request": "^2.88.0",
-    "timeago.js": "^4.0.0-beta.2"
+    "timeago.js": "^4.0.0-beta.2",
+    "@babel/helpers": "*",
+    "Lucy": "*",
+    "babel-eslint": "*",
+    "eslint": "*"
   },
   "devDependencies": {}
 }

@@ -1,70 +1,47 @@
 let win;
-var settings
-const { ipcMain, app, session, protocol, BrowserWindow } = require('electron')
-const dirname = app.getAppPath()
-const userPath = app.getPath("userData")
-const {PassThrough} = require('stream')
-const path = require('path')
-const fs = require('fs')
-const URL = require('url')
-const request = require('request')
-const mime = require('mime-types')
-var load = function(type, req, callback) {
-  if (type === 'b') {
-    let key = req.url.substr(4);
-    let url = eval('`'+settings.b+'`');
-    callback({url: url, method: req.method})
-  } else if (type === 'c') {
-    var key = req.url.substr(4);
-    let url = eval('`'+settings.c+'`');
-    callback({url: url, method: req.method})
-  }
-}
-var refreshSettings = function() {
-  // Settings 
-  let p = path.join(userPath, '.', 'settings.json');
-  fs.readFile(p, (err, data) => {
-    if(data){
-      try {
-        settings = JSON.parse(data) 
-/*
-        let defaults = [
-          "chrome:.*",
-          "chrome-devtools:.*",
-          "data:.*",
-          "b:\/\/.*",
-          "c:\/\/.*",
-          "file:\/\/.*",
-        ]
-
-        let whitelist = settings.whitelist.split(",")
-        whitelist.forEach(function(host) {
-          defaults.push(".*" + host.trim() + ".*")
-        })
-        const trusted = new RegExp("(" + defaults.join("|") + ")")
-        session.defaultSession.webRequest.onBeforeRequest(function(details, callback) {
-          let test = trusted.test(details.url)
-          callback({cancel: !test})
-        });
-        */
-      } catch (e) {
-        console.log("Error", e)
+let settings;
+const {
+  ipcMain,
+  app,
+  protocol,
+  BrowserWindow
+} = require('electron');
+const dirname = app.getAppPath();
+const userPath = app.getPath('userData');
+const path = require('path');
+const {
+  createReadStream,
+  readFile: fsRead
+} = require('fs');
+const {
+  parse: urlParse
+} = require('url');
+const {
+  promise,
+  jsonParse
+} = require('url');
+const request = require('request');
+const mime = require('mime-types');
+function readFile(filePath) {
+  return promise((accept) => {
+    fsRead(filePath, (error, data) => {
+      if (error) {
+        console.log(filePath, error);
+        return false;
       }
-    } else {
-      let stubPath = path.join(dirname, '.', 'settings.json');
-      fs.readFile(stubPath, (err, data) => {
-        if(data){
-          try {
-            settings = JSON.parse(data) 
-          } catch (e) {
-            console.log("Error", e)
-          }
-        }
-      })
-    }
-  })
+      return accept(data);
+    });
+  });
 }
-var createWindow = function () {
+const refreshSettings = async function() {
+  const settingsUserPath = path.join(userPath, '.', 'settings.json');
+  settings = jsonParse(await readFile(settingsUserPath));
+  if (!settings) {
+    return console.log('Error', 'Settings failed to load.');
+  }
+  settings = jsonParse(await readFile('./settings.json'));
+};
+const createWindow = async function() {
   win = new BrowserWindow({
     titleBarStyle: 'hidden',
     webPreferences: {
@@ -73,113 +50,81 @@ var createWindow = function () {
       webSecurity: false
     }
   });
-  win.maximize()
-
+  win.maximize();
   win.loadURL(`file:///${dirname}/index.html`);
-
-  refreshSettings()
-  
-  protocol.registerStreamProtocol('b', function(req, callback) {
-    //load("b", req, callback)
-    let key = req.url.substr(4);
-    let new_url = eval('`'+settings.b+'`');
-    let st = request(new_url)
-    st.on('response', response => {
-      callback({
-        data: st,
-        statusCode: response.statusCode,
-        headers: response.headers
-      })  
-    })
-  }, function (error) {
-    if (error)
-      console.error('Failed to register protocol')
-  })
-  protocol.registerStreamProtocol('c', function(req, callback) {
-    //load("c", req, callback)
-    let key = req.url.substr(4);
-    let new_url = eval('`'+settings.c+'`');
-    let st = request(new_url)
-    st.on('response', response => {
-      callback({
-        data: st,
-        statusCode: response.statusCode,
-        headers: response.headers
-      })  
-    })
-  }, function (error) {
-    if (error)
-      console.error('Failed to register protocol')
-  })
+  await refreshSettings();
+  function onResponse(callback, data, {
+    headers,
+    statusCode
+  }) {
+    callback({
+      data,
+      headers,
+      statusCode
+    });
+  }
+  function schemeRequest(schemeURL, url, callback) {
+    const key = url.substr(4);
+    const newUrl = `${schemeURL}${key}`;
+    const data = request(newUrl);
+    data.on('response', (response) => {
+      onResponse(callback, data, response);
+    });
+  }
+  protocol.registerStreamProtocol('b', (req, callback) => {
+    schemeRequest(settings.b, req.url, callback);
+  }, (error) => {
+    return error && console.error('Failed to register protocol', error);
+  });
+  protocol.registerStreamProtocol('c', (req, callback) => {
+    schemeRequest(settings.c, req.url, callback);
+  }, (error) => {
+    return error && console.error('Failed to register protocol', error);
+  });
   protocol.interceptStreamProtocol('file', (req, callback) => {
-    const url = req.url.trim().substr(8)
-    if (/^b:\/\//i.test(url)) {
-      let key = url.substr(4);
-      let new_url = eval('`'+settings.b+'`');
-      let st = request(new_url)
-      st.on('response', response => {
-        callback({
-          data: st,
-          statusCode: response.statusCode,
-          headers: response.headers
-        })  
-      })
-    } else if (/^c:\/\//i.test(url)) {
-      var key = url.substr(4);
-      let new_url = eval('`'+settings.c+'`');
-      let st = request(new_url)
-      st.on('response', response => {
-        callback({
-          data: st,
-          statusCode: response.statusCode,
-          headers: response.headers
-        })  
-      })
+    const url = req.url.trim().substr(8);
+    if ((/^b:\/\//i).test(url)) {
+      schemeRequest(settings.b, url, callback);
+    } else if ((/^c:\/\//i).test(url)) {
+      schemeRequest(settings.c, url, callback);
     } else {
-      // regular file
-      let parsed
-      if (process.platform === 'win32') {
-        parsed = URL.parse(url);
-      } else {
-        parsed = URL.parse(req.url)
-      }
-      let decoded = decodeURI(parsed.pathname)
-      let exists = fs.existsSync(decoded)
-      let result = {
-        data: fs.createReadStream(decoded)
-      }
-      let type = mime.lookup(decoded)
+      const parsed = (process.platform === 'win32') ? urlParse(url) : urlParse(req.url);
+      const decoded = decodeURI(parsed.pathname);
+      const result = {
+        data: createReadStream(decoded)
+      };
+      const type = mime.lookup(decoded);
       if (type) {
-        result.headers = { "Content-type": type }
+        result.headers = {
+          'Content-type': type
+        };
       }
-      callback(result)
+      return callback(result);
     }
   }, (error) => {
-    if (error) console.error('Failed to register protocol')
-  })
-  win.maximize()
+    return error && console.error('Failed to register protocol', error);
+  });
+  win.maximize();
   win.on('closed', () => {
-    win = null
-  })
-}
-protocol.registerStandardSchemes(["b", "c", "file"])
-ipcMain.on('refresh-settings', (event, arg) => {
-  refreshSettings()
-})
+    win = null;
+  });
+};
+protocol.registerStandardSchemes(['b', 'c', 'file']);
+ipcMain.on('refresh-settings', refreshSettings);
 app.commandLine.appendSwitch('ignore-certificate-errors', 'true');
-app.setAsDefaultProtocolClient("b")
-app.setAsDefaultProtocolClient("c")
-app.on('open-url', function (event, data) {
-  event.preventDefault();
-  win.webContents.send("open-url", data)
-});
-app.on('ready', function() {
-  if (!win) {
-    createWindow()
-  }
-})
+app.setAsDefaultProtocolClient('b');
+app.setAsDefaultProtocolClient('c');
+function onOpenURL(openUrlEvent, data) {
+  openUrlEvent.preventDefault();
+  win.webContents.send('open-url', data);
+}
+app.on('open-url', onOpenURL);
+function onReady() {
+  !win && createWindow();
+}
+app.on('ready', onReady);
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
-    app.quit()
+    app.quit();
   }
-})
+});
