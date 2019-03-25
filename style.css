@@ -5,8 +5,11 @@
   /*
   border-bottom: 1px solid #e4e4e4;
   */
+  -webkit-app-region: drag;
 }
-
+#nav-body-ctrls button {
+  -webkit-app-region: no-drag;
+}
 #nav-body-tabs {
   background: whitesmoke;
   /*
@@ -23,6 +26,9 @@
 
 #nav-body-views {
   flex: 1
+}
+.hidden {
+  display: none !important;
 }
 
 .nav-icons {

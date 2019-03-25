@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta charset="UTF-8" />
 <link href="./style.css" rel='stylesheet'>
 </head>
 <body>
@@ -125,6 +126,7 @@ const enav = new (require('electron-navigation'))({
       newOptions.title = "Bottle"
     }
     newOptions.webviewAttributes.plugins = ""
+    newOptions.webviewAttributes.defaultEncoding = "utf-8"
     newOptions.webviewAttributes.preload = dirname + "/preload.js"
     let ret = {
       url: newUrl, options: newOptions
@@ -133,6 +135,8 @@ const enav = new (require('electron-navigation'))({
   },
   changeTabCallback: function(el) {
     current_url = el.getAttribute('src')
+    let src = document.querySelector("#nav-source")
+    let bookmark = document.querySelector("#nav-bookmark")
     if (/^view-source:.*/.test(current_url)) {
       let original_url = current_url.slice(12)
       fetch(original_url).then(function(res) {
@@ -140,11 +144,19 @@ const enav = new (require('electron-navigation'))({
       }).then(function(res) {
         el.loadURL("data:text/plain;base64," + utoa(res))
       })
+      if (src) src.classList.add("hidden")
+      if (bookmark) bookmark.classList.add("hidden")
     } else if (/about:blank/.test(current_url)) {
       document.querySelector("#nav-ctrls-url").focus()
+      document.querySelector("#nav-source").classList.add("hidden")
     } else if (/file:\/\/.*drive\.html$/.test(current_url)) {
       document.querySelector("#nav-ctrls-url").value = ""
       document.querySelector("#nav-ctrls-url").focus()
+      if (src) src.classList.add("hidden")
+      if (bookmark) bookmark.classList.add("hidden")
+    } else {
+      if (src) src.classList.remove("hidden")
+      if (bookmark) bookmark.classList.remove("hidden")
     }
   },
   newTabParams: ["file://" + dirname + "/drive.html", {
@@ -254,12 +266,12 @@ fs.readFile(p, (err, data) => {
 ***********************************************************************/
 var button = function(o) {
   let d =  document.createElement("div")
-  d.innerHTML = '<i id="' + o.id + '" class="nav-tab-item nav-icons" title="' + o.title + '"><img src="' + o.icon + '"></i>'
+  d.innerHTML = '<i id="' + o.id + '" class="nav-tab-item nav-icons' + (o.hidden ? ' hidden"' : '"') + ' title="' + o.title + '"><img src="' + o.icon + '"></i>'
   document.querySelector("#nav-body-ctrls").appendChild(d)
   d.addEventListener("click", o.onclick)
 }
 button({
-  id: "nav-bookmark", title: "bookmark", icon: "file:///" + dirname + "/star.png", onclick: function(e) {
+  id: "nav-bookmark", hidden: true, title: "bookmark", icon: "file:///" + dirname + "/star.png", onclick: function(e) {
     let new_url = "file:///" + dirname + "/bookmark.html?url=" + current_url 
     let source = enav.newTab(new_url, {
       node: true,
@@ -273,7 +285,7 @@ button({
   }
 })
 button({
-  id: "nav-source", title: "view source", icon: "file:///" + dirname + "/code.png", onclick: function(e) {
+  id: "nav-source", hidden: true, title: "view source", icon: "file:///" + dirname + "/code.png", onclick: function(e) {
     let new_url = "view-source:" + current_url
     let source = enav.newTab(new_url, {
       icon: "file:///" + dirname + "/code.png",
