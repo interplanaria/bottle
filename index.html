@@ -128,6 +128,7 @@ const enav = new (require('electron-navigation'))({
     newOptions.webviewAttributes.plugins = ""
     newOptions.webviewAttributes.defaultEncoding = "utf-8"
     newOptions.webviewAttributes.preload = dirname + "/preload.js"
+    newOptions.webviewAttributes.disablewebsecurity = ""
     let ret = {
       url: newUrl, options: newOptions
     }
@@ -154,6 +155,8 @@ const enav = new (require('electron-navigation'))({
       document.querySelector("#nav-ctrls-url").focus()
       if (src) src.classList.add("hidden")
       if (bookmark) bookmark.classList.add("hidden")
+    } else if (/^chrome.*/.test(current_url)) {
+      if (src) src.classList.add("hidden")
     } else {
       if (src) src.classList.remove("hidden")
       if (bookmark) bookmark.classList.remove("hidden")
@@ -197,10 +200,12 @@ enav._purifyUrl = function(str) {
 var oldUpdateUrl = enav._updateUrl;
 enav._updateUrl = function(url) {
   if (/file:\/\/\/[bc]:\/\//i.test(url)) {
+    current_url = url;
     let newUrl = url.replace(/file:\/\/\//i, "");
     oldUpdateUrl(newUrl);
   } else if (url) {
-    oldUpdateUrl(url);
+    current_url = url;
+    oldUpdateUrl(current_url);
   }
 }
 
@@ -272,6 +277,10 @@ var button = function(o) {
 }
 button({
   id: "nav-bookmark", hidden: true, title: "bookmark", icon: "file:///" + dirname + "/star.png", onclick: function(e) {
+    let match = /chrome:\/\/[^/]+\/index\.html\?src=(.+)$/g.exec(current_url);
+    if (match && match.length > 1) {
+      current_url = match[1];
+    }
     let new_url = "file:///" + dirname + "/bookmark.html?url=" + current_url 
     let source = enav.newTab(new_url, {
       node: true,
