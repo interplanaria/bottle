@@ -6,6 +6,7 @@
 </head>
 <body>
 <div id="nav-body-ctrls"></div>
+<div id="nav-body-shortcuts"></div>
 <div id="nav-body-tabs"></div>
 <div id="nav-body-views"></div>
 <script>
@@ -17,6 +18,7 @@ const dirname = remote.app.getAppPath()
 const userPath = remote.app.getPath("userData")
 const navDefaultURL = "about:blank";
 const menu = require('./menu')
+const prompt = require('electron-prompt')
 const utoa = function (str) { return window.btoa(unescape(encodeURIComponent(str))) }
 const atou = function (str) { return decodeURIComponent(escape(window.atob(str))) }
 const fromKeyCode = function(n) {
@@ -136,8 +138,6 @@ const enav = new (require('electron-navigation'))({
   },
   changeTabCallback: function(el) {
     current_url = el.getAttribute('src')
-    let src = document.querySelector("#nav-source")
-    let bookmark = document.querySelector("#nav-bookmark")
     if (/^view-source:.*/.test(current_url)) {
       let original_url = current_url.slice(12)
       fetch(original_url).then(function(res) {
@@ -145,22 +145,14 @@ const enav = new (require('electron-navigation'))({
       }).then(function(res) {
         el.loadURL("data:text/plain;base64," + utoa(res))
       })
-      if (src) src.classList.add("hidden")
-      if (bookmark) bookmark.classList.add("hidden")
     } else if (/about:blank/.test(current_url)) {
       document.querySelector("#nav-ctrls-url").focus()
       document.querySelector("#nav-source").classList.add("hidden")
     } else if (/file:\/\/.*drive\.html$/.test(current_url)) {
       document.querySelector("#nav-ctrls-url").value = ""
       document.querySelector("#nav-ctrls-url").focus()
-      if (src) src.classList.add("hidden")
-      if (bookmark) bookmark.classList.add("hidden")
-    } else if (/^chrome.*/.test(current_url)) {
-      if (src) src.classList.add("hidden")
-    } else {
-      if (src) src.classList.remove("hidden")
-      if (bookmark) bookmark.classList.remove("hidden")
     }
+    handleNav()
   },
   newTabParams: ["file://" + dirname + "/drive.html", {
     defaultFavicons: true,
@@ -204,8 +196,31 @@ enav._updateUrl = function(url) {
     let newUrl = url.replace(/file:\/\/\//i, "");
     oldUpdateUrl(newUrl);
   } else if (url) {
-    current_url = url;
-    oldUpdateUrl(current_url);
+    // todo: generalize
+    if (url != "https://www.moneybutton.com/iframe/v2?format=postmessage") {
+      current_url = url;
+      handleNav()
+      if (Bookmarklet) {
+        Bookmarklet.update()
+      }
+      oldUpdateUrl(current_url);
+    }
+  }
+}
+var handleNav = function() {
+  let src = document.querySelector("#nav-source")
+  let bookmark = document.querySelector("#nav-bookmark")
+  if (/^view-source:.*/.test(current_url)) {
+    if (src) src.classList.add("hidden")
+    if (bookmark) bookmark.classList.add("hidden")
+  } else if (/file:\/\/.*drive\.html$/.test(current_url)) {
+    if (src) src.classList.add("hidden")
+    if (bookmark) bookmark.classList.add("hidden")
+  } else if (/^chrome.*/.test(current_url)) {
+    if (src) src.classList.add("hidden")
+  } else {
+    if (src) src.classList.remove("hidden")
+    if (bookmark) bookmark.classList.remove("hidden")
   }
 }
 
@@ -233,8 +248,8 @@ home.setAttribute('plugins', '');
 *  Check Settings and Display by default if Not Set
 *
 ***********************************************************************/
-var p = path.join(userPath, '.', 'settings.json');
-fs.readFile(p, (err, data) => {
+var settings_path = path.join(userPath, '.', 'settings.json');
+fs.readFile(settings_path, (err, data) => {
   let needToSet = false
   if(data){
     try {
@@ -281,16 +296,11 @@ button({
     if (match && match.length > 1) {
       current_url = match[1];
     }
-    let new_url = "file:///" + dirname + "/bookmark.html?url=" + current_url 
-    let source = enav.newTab(new_url, {
-      node: true,
-      icon: "file:///" + dirname + "/star.png",
-      webviewAttributes: {
-        plugins: "",
-        preload: dirname + "/preload.js"
-      },
-    })
-    source.setAttribute('plugins', '');
+    if (Bookmarklet.items.map(function(item) { return item.url }).includes(current_url)) {
+      Bookmarklet.del(current_url)
+    } else {
+      Bookmarklet.set(current_url)
+    }
   }
 })
 button({
@@ -323,10 +333,124 @@ button({
 })
 
 
+
+/***********************************************************************
+*
+*  Bookmarklet
+*
+***********************************************************************/
+var Bookmarklet = {
+  path: path.join(userPath, '.', 'bookmark.json'),
+  get: function() {
+    return new Promise(function(resolve, reject) {
+      fs.readFile(Bookmarklet.path, (err, data) => {
+        if(data){
+          try {
+            var items = JSON.parse(data) 
+            Bookmarklet.items = items
+            resolve(items)
+          } catch (e) {
+            console.log("Error", e)
+            reject()
+          }
+        } else {
+          resolve([])
+        }
+      })
+    })
+  },
+  set: function(url) {
+    document.querySelector("#nav-body-shortcuts").style.backgroundColor = "whitesmoke";
+    prompt({
+      title: 'Bookmarklet',
+      label: 'Save as:',
+      value: '',
+      resizable: true,
+      customStylesheet: dirname + "/prompt.css"
+    }).then((r) => {
+      if(r === null) {
+        console.log('user cancelled');
+      } else {
+        Bookmarklet.get().then(function(items) {
+          items.push({ name: r, url: url })
+          fs.writeFile(Bookmarklet.path, JSON.stringify(items, null, 2), (err, data) => {
+            Bookmarklet.items = items
+            Bookmarklet.render(items)
+          })
+        })
+      }
+    }).catch(console.error);
+  },
+  del: function(url) {
+    Bookmarklet.get().then(function(items) {
+      let index = items.map(function(item) {
+        return item.url
+      }).indexOf(url)
+      if (index > -1) {
+        items.splice(index, 1)
+      }
+      Bookmarklet.items = items
+      fs.writeFile(Bookmarklet.path, JSON.stringify(items, null, 2), (err, data) => {
+        Bookmarklet.render(items)
+      })
+    })
+  },
+  render: function(items) {
+    let marklets = items.map(function(item) {
+      return "<a draggable='true' class='shortcut' data-url='" + item.url + "'>" + item.name + "</a>"
+    }).join("")
+    document.querySelector("#nav-body-shortcuts").innerHTML = marklets
+    Bookmarklet.update()
+  },
+  update: function() {
+    let icon = (Bookmarklet.items.map(function(item) { return item.url }).includes(current_url) ? "file:///" + dirname + "/yellowstar.png" : "file:///" + dirname + "/star.png")
+    document.querySelector("#nav-bookmark img").setAttribute("src", icon)
+  },
+  items: []
+}
+
 document.addEventListener("DOMContentLoaded", function(e) {
   ipcRenderer.on('open-url', (event, url) => {
     webview.loadURL(url)
   });
+  Bookmarklet.get().then(function(items) {
+    Bookmarklet.render(items)
+  })
+  document.querySelector("#nav-body-shortcuts").addEventListener("dragleave", function(ev) {
+    ev.preventDefault()
+    document.querySelector("#nav-body-shortcuts").style.backgroundColor = "whitesmoke";
+  }, false);
+  document.querySelector("#nav-body-shortcuts").addEventListener("dragover", function(ev) {
+    ev.preventDefault()
+    document.querySelector("#nav-body-shortcuts").style.backgroundColor = "silver";
+  }, false);
+  document.querySelector("#nav-body-shortcuts").addEventListener("click", function(e) {
+    if (e.target.className === 'shortcut') {
+      let url = e.target.dataset.url
+      if (/^(https?:|b:|c:).*/i.test(url)) {
+        document.querySelector("webview.nav-views-view.active").executeJavaScript("location.href='" + url + "'")
+      } else if (/^javascript:/.test(url)) {
+        let js = url.replace(/javascript:/, "")
+        document.querySelector("webview.nav-views-view.active").executeJavaScript(js)
+      } else {
+        document.querySelector("webview.nav-views-view.active").executeJavaScript(url)
+      }
+    }
+  })
+
+  document.addEventListener("dragstart", function(ev) {
+    let url = ev.target.dataset.url
+    console.log("url = ", url)
+    Bookmarklet.del(url)
+  })
+  document.addEventListener("drop", function(ev) {
+    ev.preventDefault()
+    ev.stopPropagation()
+    if (ev.target.id === 'nav-body-shortcuts' || ev.target.closest("#nav-body-shortcuts")) {
+      let url = ev.dataTransfer.getData("text/plain")
+      Bookmarklet.set(url)
+    }
+  })
   document.addEventListener("keydown", function (e) {
     var ctrlPressed = 0;
     var altPressed = 0;

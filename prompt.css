@@ -1,0 +1,11 @@
+body {
+  background: rgba(0,0,0,0.9);
+  color: white;
+  font-size: 12px;
+}
+#data {
+  width: 100%;
+}
+#data:focus {
+  outline: none;
+}
