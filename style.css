@@ -5,8 +5,11 @@
   /*
   border-bottom: 1px solid #e4e4e4;
   */
+  -webkit-app-region: drag;
 }
-
+#nav-body-ctrls button {
+  -webkit-app-region: no-drag;
+}
 #nav-body-tabs {
   background: whitesmoke;
   /*
@@ -20,9 +23,16 @@
   flex-direction: row;
   max-width: 100vw;
 }
+#nav-body-shortcuts {
+  height: 25px;
+  background: whitesmoke;
+}
 
 #nav-body-views {
   flex: 1
+}
+.hidden {
+  display: none !important;
 }
 
 .nav-icons {
@@ -75,7 +85,6 @@
 .nav-tab-item img {
   width: 25px;
   height: 25px;
-  opacity: 0.5;
 }
 #nav-tabs-add:before {
   content: "+";
@@ -187,4 +196,16 @@ body {
 #nav-body-view-wrapper {
   display: flex;
   flex: 1
+}
+.shortcut {
+  text-decoration: none;
+  padding: 5px 10px;
+  font-size: 13px;
+  font-family: Arial;
+  color: rgba(0,0,0,0.8);
+  display: inline-block;
+  cursor: pointer;
+}
+.shortcut:hover {
+  opacity: 0.7;
 }

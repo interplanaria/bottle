@@ -80,13 +80,14 @@ var createWindow = function () {
   refreshSettings()
   
   protocol.registerStreamProtocol('b', function(req, callback) {
-    //load("b", req, callback)
     let key = req.url.substr(4);
     let new_url = eval('`'+settings.b+'`');
     let st = request(new_url)
     st.on('response', response => {
+      const pass = new PassThrough()
+      st.pipe(pass)
       callback({
-        data: st,
+        data: pass,
         statusCode: response.statusCode,
         headers: response.headers
       })  
@@ -96,13 +97,14 @@ var createWindow = function () {
       console.error('Failed to register protocol')
   })
   protocol.registerStreamProtocol('c', function(req, callback) {
-    //load("c", req, callback)
     let key = req.url.substr(4);
     let new_url = eval('`'+settings.c+'`');
     let st = request(new_url)
     st.on('response', response => {
+    	const pass = new PassThrough()
+      st.pipe(pass)
       callback({
-        data: st,
+        data: pass,
         statusCode: response.statusCode,
         headers: response.headers
       })  
@@ -118,8 +120,10 @@ var createWindow = function () {
       let new_url = eval('`'+settings.b+'`');
       let st = request(new_url)
       st.on('response', response => {
+        const pass = new PassThrough()
+        st.pipe(pass)
         callback({
-          data: st,
+          data: pass,
           statusCode: response.statusCode,
           headers: response.headers
         })  
@@ -129,8 +133,10 @@ var createWindow = function () {
       let new_url = eval('`'+settings.c+'`');
       let st = request(new_url)
       st.on('response', response => {
+        const pass = new PassThrough()
+        st.pipe(pass)
         callback({
-          data: st,
+          data: pass,
           statusCode: response.statusCode,
           headers: response.headers
         })  
