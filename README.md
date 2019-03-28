@@ -51,6 +51,7 @@ git clone https://github.com/interplanaria/bottle.git
 Then install dependencies
 
 ```
+cd bottle
 npm install
 ```
 
