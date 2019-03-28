@@ -360,6 +360,7 @@ var Bookmarklet = {
     })
   },
   set: function(url) {
+    url = url.replace(/^file:\/\/\//i, "");
     document.querySelector("#nav-body-shortcuts").style.backgroundColor = "whitesmoke";
     prompt({
       title: 'Bookmarklet',
