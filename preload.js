@@ -1,4 +1,3 @@
-console.log("preload")
 const {webFrame} = require('electron')
 webFrame.registerURLSchemeAsPrivileged("b")
 webFrame.registerURLSchemeAsPrivileged("c")

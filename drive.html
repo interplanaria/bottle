@@ -158,6 +158,8 @@ var get = function(o) {
         "$search": o.search
       }
     }
+  } else if (o.q) {
+    f = o.q
   }
 	var query = {
 		"v": 3,
@@ -232,6 +234,25 @@ document.addEventListener("DOMContentLoaded", function(e) {
     let val = e.target.querySelector("input[type=text]").value
     e.stopPropagation()
     e.preventDefault()
+    if (/^filename:/.test(val)) {
+      get({
+        q: {
+          "out.s5": {
+            "$regex": val.replace(/filename:/,'').trim(),
+            "$options": "i"
+          }
+        }
+      })
+    } else if (/^filetype:/.test(val)) {
+      get({
+        q: {
+          "out.s3": {
+            "$regex": val.replace(/filetype:/,'').trim(),
+            "$options": "i"
+          }
+        }
+      })
+    }
     get({search: val})
   })
   document.querySelector("#detail .list").addEventListener("click", function(e) {
