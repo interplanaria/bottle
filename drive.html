@@ -152,7 +152,7 @@ var get = function(o) {
   } else if (o.q) {
     f = o.q;
   }
-	var query = {
+  var query = {
     "v": 3,
     "q": {
       "find": f,
@@ -162,18 +162,16 @@ var get = function(o) {
     "r": {
       "f": "[ .[] | { blk: .blk, c: .c, b: .tx.h, out: .out }]"
     }
-	};
-	var b64 = btoa(JSON.stringify(query));
-	var url = "https://data.bitdb.network/q/1KuUr2pSJDao97XM8Jsq8zwLS6W1WtFfLg/" + b64;
-	var header = {
-		headers: { key: "16JaLJ8b5UvQp355Gva2qhuTS65NkowhPr" }
-	};
+  };
+  var b64 = btoa(JSON.stringify(query));
+  var url = "https://data.bitdb.network/q/1KuUr2pSJDao97XM8Jsq8zwLS6W1WtFfLg/" + b64;
+  var header = { headers: { key: "16JaLJ8b5UvQp355Gva2qhuTS65NkowhPr" } };
 
-	fetch(url, header).then(function(r) {
-		return r.json();
-	}).then(function(r) {
-		let items = r.u.concat(r.c);
-		let html = items.map(function(item) {
+  fetch(url, header).then(function(r) {
+    return r.json();
+  }).then(function(r) {
+    let items = r.u.concat(r.c);
+    let html = items.map(function(item) {
       return "<div class='item' data-state='" + (item.blk ? "confirmed" : "unconfirmed") + "' data-url='c://" + item.c + "'>" +
         "<div class='name'>" + (item.out[0].s5 ? item.out[0].s5.slice(0, 200) : "c://" + item.c) + "</div>" +
         "<div class='meta'>" + item.out[0].s3 + " - " + (item.blk ? "block " + item.blk.i + " (" + timeago.format(item.blk.t * 1000) + ")" : "unconfirmed") + "</div>" +
