@@ -143,42 +143,25 @@ var get = function(o) {
   let f
   if (o.type) {
     if (o.type === 'all') {
-      f = { };
+      f = {};
     } else {
-      f = {
-        "out.s3": {
-          "$regex": o.type,
-          "$options": "i"
-        }
-      };
+      f = { "out.s3": { "$regex": o.type, "$options": "i" } };
     }
   } else if (o.search) {
-    f = {
-      "$text": {
-        "$search": o.search
-      }
-    };
+    f = { "$text": { "$search": o.search } };
   } else if (o.q) {
     f = o.q;
   }
 	var query = {
-		"v": 3,
-		"q": {
-			"find": f,
-			"project": {
-				"c": 1,
-				"tx": 1,
-				"in.e": 1,
-				"out.s3": 1,
-				"out.s4": 1,
-				"out.s5": 1,
-        "blk": 1
-			},
+    "v": 3,
+    "q": {
+      "find": f,
+      "project": { "c": 1, "tx": 1, "in.e": 1, "out.s3": 1, "out.s4": 1, "out.s5": 1, "blk": 1 },
       "limit": 200
-		},
-		"r": {
-			"f": "[ .[] | { blk: .blk, c: .c, b: .tx.h, out: .out }]"
-		}
+    },
+    "r": {
+      "f": "[ .[] | { blk: .blk, c: .c, b: .tx.h, out: .out }]"
+    }
 	};
 	var b64 = btoa(JSON.stringify(query));
 	var url = "https://data.bitdb.network/q/1KuUr2pSJDao97XM8Jsq8zwLS6W1WtFfLg/" + b64;
@@ -201,7 +184,7 @@ var get = function(o) {
     document.querySelector("#detail .list").innerHTML = html;
     document.querySelector("#frame").classList.add("hidden");
     document.querySelector("#detail").classList.remove("hidden");
-	})
+  })
 }
 document.addEventListener("DOMContentLoaded", function(e) {
   var types = ["all", "image", "video", "audio", "text", "html", "markdown", "json", "xml", "javascript", "css", "pdf", "mp4", "mp3"];
@@ -234,23 +217,9 @@ document.addEventListener("DOMContentLoaded", function(e) {
     e.stopPropagation();
     e.preventDefault();
     if (/^filename:/.test(val)) {
-      get({
-        q: {
-          "out.s5": {
-            "$regex": val.replace(/filename:/,'').trim(),
-            "$options": "i"
-          }
-        }
-      });
+      get({ q: { "out.s5": { "$regex": val.replace(/filename:/,'').trim(), "$options": "i" } } });
     } else if (/^filetype:/.test(val)) {
-      get({
-        q: {
-          "out.s3": {
-            "$regex": val.replace(/filetype:/,'').trim(),
-            "$options": "i"
-          }
-        }
-      });
+      get({ q: { "out.s3": { "$regex": val.replace(/filetype:/,'').trim(), "$options": "i" } } });
     }
     get({search: val});
   })
