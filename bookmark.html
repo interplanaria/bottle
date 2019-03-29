@@ -19,7 +19,6 @@ body {
   margin: 5px 0;
 }
 .form {
-  margin: 20px;
   padding: 50px;
   background: rgba(0,0,0,0.03);
 }
@@ -33,16 +32,24 @@ button {
   border-radius: 2px;
   border: none;
 }
+.rows {
+  margin-top: 20px;
+}
 .row {
-  margin: 20px;
   padding: 10px;
+}
+.row:nth-child(odd) {
+  background: white;
+}
+.row:nth-child(even) {
+  background: whitesmoke;
 }
 .row .name {
   font-weight: bold;
   font-size: 14px;
 }
 .row a.url {
-  color: silver;
+  color: rgba(0,0,0,0.8);
   font-size: 12px;
 }
 .row .description {
@@ -71,7 +78,6 @@ var read = function() {
             return `<div class='row'>
               <div class='name'>${item.name}</div>
               <a class='url' href='${item.url}'>${item.url}</a>
-              <div class='description'>${item.description}</div>
             </div>`
           }).join("")
           document.querySelector(".rows").innerHTML = d
@@ -88,7 +94,6 @@ document.addEventListener("DOMContentLoaded", function(e) {
   document.querySelector("button#save").addEventListener("click", function(e) {
     let o = {
       name: document.querySelector("#name").value,
-      description: document.querySelector("#description").value,
       url: document.querySelector("#url").value,
     }
     items.push(o)
@@ -106,7 +111,6 @@ document.addEventListener("DOMContentLoaded", function(e) {
     <h2>Bookmark</h2>
     <input id='url' type='text' placeholder='enter url'>
     <input id='name' type='text' placeholder='enter name'>
-    <input id='description' type='text' placeholder='enter description'>
     <button id='save' value='save'>Save</button>
   </div>
   <div class='rows'>
