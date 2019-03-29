@@ -1,3 +1,4 @@
+const {webFrame} = require('electron');
 module.exports = {
   init: function() {
     webFrame.registerURLSchemeAsPrivileged("b");
