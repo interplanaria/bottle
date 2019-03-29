@@ -102,9 +102,9 @@ module.exports = {
           }
         }
       })
-      document.addEventListener("dragstart", Events.ondragstart);
-      document.addEventListener("drop", Events.ondrop);
-      document.addEventListener("keydown", Events.onkeydown);
+      document.addEventListener("dragstart", ondragstart);
+      document.addEventListener("drop", ondrop);
+      document.addEventListener("keydown", onkeydown);
     });
   }
 }
