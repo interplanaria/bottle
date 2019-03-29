@@ -51,16 +51,11 @@ button {
 </style>
 <script>
 document.addEventListener("DOMContentLoaded", function(e) {
-  let items = [{
-    url: "https://www.bitcoinfiles.org/new",
-    name: "Bitcoinfiles",
-  }, {
-    url: "https://www.bitpaste.app/tx/new",
-    name: "Bitpaste",
-  }, {
-    url: "https://add.bico.media",
-    name: "Bico.media",
-  }];
+  let items = [
+    { url: "https://www.bitcoinfiles.org/new", name: "Bitcoinfiles" },
+    { url: "https://www.bitpaste.app/tx/new", name: "Bitpaste" },
+    { url: "https://add.bico.media", name: "Bico.media" }
+  ];
   let html = items.map(function(item) {
     return `<div class='row'>
       <div class='name'>${item.name}</div>
