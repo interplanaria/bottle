@@ -1,7 +1,3 @@
-const {webFrame} = require('electron')
-webFrame.registerURLSchemeAsPrivileged("b")
-webFrame.registerURLSchemeAsPrivileged("c")
-webFrame.registerURLSchemeAsPrivileged("file")
-webFrame.registerURLSchemeAsBypassingCSP("b")
-webFrame.registerURLSchemeAsBypassingCSP("c")
-webFrame.registerURLSchemeAsBypassingCSP("file")
+const {webFrame} = require('electron');
+const URIScheme = require('urischeme');
+URIScheme.init();

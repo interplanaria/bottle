@@ -57,51 +57,52 @@ button {
 }
 </style>
 <script>
-const fs = require('fs')
-const path = require('path')
-const {remote} = require('electron')
-const dirname = remote.app.getAppPath()
-const userPath = remote.app.getPath("userData")
+const fs = require('fs');
+const path = require('path');
+const {remote} = require('electron');
+const dirname = remote.app.getAppPath();
+const userPath = remote.app.getPath("userData");
 var vars = {};
 var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {
     vars[key] = value;
 });
 var p = path.join(userPath, '.', 'bookmark.json');
-var items = []
+var items = [];
 var read = function() {
-  fs.readFile(p, (err, data) => {
+  fs.readFile(p, function(err, data) {
     if(data){
       try {
-        items = JSON.parse(data) 
+        items = JSON.parse(data);
         if (items && Array.isArray(items) && items.length > 0) {
           let d = items.map(function(item) {
             return `<div class='row'>
               <div class='name'>${item.name}</div>
-              <a class='url' href='${item.url}'>${item.url}</a>
+              <a target='_blank' class='url' href='${item.url}'>${item.url}</a>
             </div>`
-          }).join("")
-          document.querySelector(".rows").innerHTML = d
+          }).join("");
+          document.querySelector(".rows").innerHTML = d;
         }
       } catch (e) {
+        console.log("Error", e);
       }
     }
   })
-}
+};
 document.addEventListener("DOMContentLoaded", function(e) {
   if (vars && vars.url) {
-    document.querySelector("#url").value = vars.url
+    document.querySelector("#url").value = vars.url;
   }
   document.querySelector("button#save").addEventListener("click", function(e) {
     let o = {
       name: document.querySelector("#name").value,
       url: document.querySelector("#url").value,
-    }
-    items.push(o)
-    fs.writeFile(p, JSON.stringify(items, null, 2), (err, data) => {
-      read()
-    })
+    };
+    items.push(o);
+    fs.writeFile(p, JSON.stringify(items, null, 2), function(err, data) {
+      read();
+    });
   })
-  read()
+  read();
 })
 </script>
 </head>

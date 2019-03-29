@@ -136,30 +136,30 @@ h1 {
 }
 </style>
 <script>
-const {remote} = require('electron')
-const dirname = remote.app.getAppPath()
-var timeago = require('timeago.js')
+const {remote} = require('electron');
+const dirname = remote.app.getAppPath();
+var timeago = require('timeago.js');
 var get = function(o) {
   let f
   if (o.type) {
     if (o.type === 'all') {
-      f = { }
+      f = { };
     } else {
       f = {
         "out.s3": {
           "$regex": o.type,
           "$options": "i"
         }
-      }
+      };
     }
   } else if (o.search) {
     f = {
       "$text": {
         "$search": o.search
       }
-    }
+    };
   } else if (o.q) {
-    f = o.q
+    f = o.q;
   }
 	var query = {
 		"v": 3,
@@ -179,7 +179,7 @@ var get = function(o) {
 		"r": {
 			"f": "[ .[] | { blk: .blk, c: .c, b: .tx.h, out: .out }]"
 		}
-	}
+	};
 	var b64 = btoa(JSON.stringify(query));
 	var url = "https://data.bitdb.network/q/1KuUr2pSJDao97XM8Jsq8zwLS6W1WtFfLg/" + b64;
 	var header = {
@@ -187,53 +187,52 @@ var get = function(o) {
 	};
 
 	fetch(url, header).then(function(r) {
-		return r.json()
+		return r.json();
 	}).then(function(r) {
-		let items = r.u.concat(r.c)
+		let items = r.u.concat(r.c);
 		let html = items.map(function(item) {
       return "<div class='item' data-state='" + (item.blk ? "confirmed" : "unconfirmed") + "' data-url='c://" + item.c + "'>" +
         "<div class='name'>" + (item.out[0].s5 ? item.out[0].s5.slice(0, 200) : "c://" + item.c) + "</div>" +
-        //"<div class='flexible'></div>" +
         "<div class='meta'>" + item.out[0].s3 + " - " + (item.blk ? "block " + item.blk.i + " (" + timeago.format(item.blk.t * 1000) + ")" : "unconfirmed") + "</div>" +
         "<a target='_blank' class='button' href='b://" + item.b + "'>b://</a>" +
         "<a target='_blank' class='button' href='c://" + item.c + "'>c://</a>" +
-      "</div>"
-    }).join("")
-    document.querySelector("#detail .list").innerHTML = html
-    document.querySelector("#frame").classList.add("hidden")
-    document.querySelector("#detail").classList.remove("hidden")
+      "</div>";
+    }).join("");
+    document.querySelector("#detail .list").innerHTML = html;
+    document.querySelector("#frame").classList.add("hidden");
+    document.querySelector("#detail").classList.remove("hidden");
 	})
 }
 document.addEventListener("DOMContentLoaded", function(e) {
-  var types = ["all", "image", "video", "audio", "text", "html", "markdown", "json", "xml", "javascript", "css", "pdf", "mp4", "mp3"]
+  var types = ["all", "image", "video", "audio", "text", "html", "markdown", "json", "xml", "javascript", "css", "pdf", "mp4", "mp3"];
   var sidebar_content = types.map(function(type) {
     return "<a class='row' id='" + type + "'>" + type + "</a>"
-  }).join("")
-  document.querySelector("#frame").setAttribute("src", "https://bottle.bitdb.network/app.html")
+  }).join("");
+  document.querySelector("#frame").setAttribute("src", "https://bottle.bitdb.network/app.html");
   document.querySelector("#sidebar .container").innerHTML = sidebar_content;
-  document.querySelector("#bookmark").setAttribute("href", "file:///" + dirname + "/bookmark.html")
-  document.querySelector("#bookmark img").setAttribute("src", "file:///" + dirname + "/star.png")
-  document.querySelector("#write").setAttribute("href", "file:///" + dirname + "/write.html")
-  document.querySelector("#write img").setAttribute("src", "file:///" + dirname + "/write.png")
+  document.querySelector("#bookmark").setAttribute("href", "file:///" + dirname + "/bookmark.html");
+  document.querySelector("#bookmark img").setAttribute("src", "file:///" + dirname + "/star.png");
+  document.querySelector("#write").setAttribute("href", "file:///" + dirname + "/write.html");
+  document.querySelector("#write img").setAttribute("src", "file:///" + dirname + "/write.png");
   document.querySelector("#sidebar .container").addEventListener("click", function(e) {
     document.querySelectorAll("#sidebar .row").forEach(function(el) {
-      el.classList.remove("selected")
+      el.classList.remove("selected");
     })
     if (e.target.className === 'row') {
-      e.target.classList.add("selected")
-      get({type: e.target.id})
+      e.target.classList.add("selected");
+      get({type: e.target.id});
     } else {
-      var p = e.target.closest(".row")
+      var p = e.target.closest(".row");
       if (p) {
-        p.classList.add("selected")
-        get({type: p.id})
+        p.classList.add("selected");
+        get({type: p.id});
       }
     }
   })
   document.querySelector("form").addEventListener("submit", function(e) {
-    let val = e.target.querySelector("input[type=text]").value
-    e.stopPropagation()
-    e.preventDefault()
+    let val = e.target.querySelector("input[type=text]").value;
+    e.stopPropagation();
+    e.preventDefault();
     if (/^filename:/.test(val)) {
       get({
         q: {
@@ -242,7 +241,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
             "$options": "i"
           }
         }
-      })
+      });
     } else if (/^filetype:/.test(val)) {
       get({
         q: {
@@ -251,22 +250,22 @@ document.addEventListener("DOMContentLoaded", function(e) {
             "$options": "i"
           }
         }
-      })
+      });
     }
-    get({search: val})
+    get({search: val});
   })
   document.querySelector("#detail .list").addEventListener("click", function(e) {
     document.querySelectorAll("#detail .row").forEach(function(el) {
-      el.classList.remove("selected")
-    })
+      el.classList.remove("selected");
+    });
     if (e.target.className === 'row') {
-      e.target.classList.add("selected")
-      var url = e.target.dataset.url
+      e.target.classList.add("selected");
+      var url = e.target.dataset.url;
     } else {
-      var p = e.target.closest(".row")
+      var p = e.target.closest(".row");
       if (p) {
-        var url = p.dataset.url
-        p.classList.add("selected")
+        var url = p.dataset.url;
+        p.classList.add("selected");
       }
     }
   })

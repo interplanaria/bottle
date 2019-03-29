@@ -47,28 +47,28 @@ button.selected {
 }
 </style>
 <script>
-const fs = require('fs')
-const path = require('path')
-const {remote, ipcRenderer} = require('electron')
-const dirname = remote.app.getAppPath()
-const userPath = remote.app.getPath("userData")
+const fs = require('fs');
+const path = require('path');
+const {remote, ipcRenderer} = require('electron');
+const dirname = remote.app.getAppPath();
+const userPath = remote.app.getPath("userData");
 document.addEventListener("DOMContentLoaded", function(e) {
   let fields = {
     b: document.querySelector("input.b"),
     c: document.querySelector("input.c"),
     //whitelist: document.querySelector("input.whitelist"),
-  }
+  };
   var p = path.join(userPath, '.', 'settings.json');
-  var content
-  fs.readFile(p, (err, data) => {
+  var content;
+  fs.readFile(p, function(err, data) {
     if(data){
       try {
-        content = JSON.parse(data) 
+        content = JSON.parse(data); 
         if (content.b) {
-          fields.b.value = content.b
+          fields.b.value = content.b;
         }
         if (content.c) {
-          fields.c.value = content.c
+          fields.c.value = content.c;
         }
         /*
         if (content.whitelist) {
@@ -76,19 +76,19 @@ document.addEventListener("DOMContentLoaded", function(e) {
         }
         */
       } catch (e) {
-        console.log("Error", e)
+        console.log("Error", e);
       }
     } else {
       let stubPath = path.join(dirname, '.', 'settings.json');
-      fs.readFile(stubPath, (err, data) => {
+      fs.readFile(stubPath, function(err, data) {
         if(data){
           try {
-            content = JSON.parse(data) 
+            content = JSON.parse(data);
             if (content.b) {
-              fields.b.value = content.b
+              fields.b.value = content.b;
             }
             if (content.c) {
-              fields.c.value = content.c
+              fields.c.value = content.c;
             }
             /*
             if (content.whitelist) {
@@ -96,26 +96,26 @@ document.addEventListener("DOMContentLoaded", function(e) {
             }
             */
           } catch (e) {
-            console.log("Error", e)
+            console.log("Error", e);
           }
         }
       })
     }
-  })
+  });
   document.querySelector(".container").addEventListener("change", function(e) {
-    let className = e.target.className
+    let className = e.target.className;
     if (e.target.value) {
-      content[className] = e.target.value.trim()
+      content[className] = e.target.value.trim();
     }
-  })
+  });
   document.querySelector("#refresh").addEventListener("click", function(e) {
-    let st = JSON.stringify(content, null, 2)
-    fs.writeFile(p, st, (err, data) => {
+    let st = JSON.stringify(content, null, 2);
+    fs.writeFile(p, st, function(err, data) {
       ipcRenderer.send('refresh-settings');
-      e.target.classList.add("selected")
-    })
-  })
-})
+      e.target.classList.add("selected");
+    });
+  });
+});
 </script>
 </head>
 <body>
