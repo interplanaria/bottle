@@ -107,8 +107,8 @@ var oldUpdateUrl = enav._updateUrl;
 enav._updateUrl = function(url) {
   let current_url = Route.get();
   if (/file:\/\/\/[bc]:\/\//i.test(url)) {
-    current_url = Route.set(url);
     let newUrl = url.replace(/file:\/\/\//i, "");
+    current_url = Route.set(newUrl);
     oldUpdateUrl(newUrl);
   } else if (/file:\/\/.*(drive|settings|bookmark|write)\.html$/.test(current_url)) {
     document.querySelector("#nav-ctrls-url").value = "";
@@ -118,11 +118,11 @@ enav._updateUrl = function(url) {
     if (url != "https://www.moneybutton.com/iframe/v2?format=postmessage") {
       current_url = Route.set(url);
       //handleNav()
-      if (Bookmarklet) {
-        Bookmarklet.update();
-      }
       oldUpdateUrl(current_url);
     }
+  }
+  if (Bookmarklet) {
+    Bookmarklet.update();
   }
   handleNav();
 }
