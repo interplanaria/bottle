@@ -8,7 +8,7 @@ const handleNav = function() {
   if (/^view-source:.*/.test(current_url)) {
     if (src) src.classList.add("hidden");
     if (bookmark) bookmark.classList.add("hidden");
-  } else if (/file:\/\/.*drive\.html$/.test(current_url)) {
+  } else if (/^file:\/\/.*(drive|settings|bookmark|write)\.html/.test(current_url)) {
     if (src) src.classList.add("hidden");
     if (bookmark) bookmark.classList.add("hidden");
   } else if (/^chrome.*/.test(current_url)) {
@@ -30,7 +30,7 @@ const enav = new (require('electron-navigation'))({
     } else if (/file:\/\/\/[CB]:\/\/.*/i.test(url)) {
       newUrl = url.replace(/file:\/\/\//, "").toLowerCase();
       newOptions.title = newUrl;
-    } else if (/file:\/\/.*drive\.html$/.test(url)) {
+    } else if (/^file:\/\/.*(drive|settings|bookmark|write)\.html/.test(url)) {
       document.querySelector("#nav-ctrls-url").value = "";
       document.querySelector("#nav-ctrls-url").focus();
       newOptions.title = "Bottle";
@@ -42,6 +42,7 @@ const enav = new (require('electron-navigation'))({
     newOptions.webviewAttributes.defaultEncoding = "utf-8";
     newOptions.webviewAttributes.preload = dirname + "/preload.js";
     newOptions.webviewAttributes.disablewebsecurity = "";
+    newOptions.webviewAttributes.contextIsolation = "";
     let ret = { url: newUrl, options: newOptions };
     return ret;
   },
