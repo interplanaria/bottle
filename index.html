@@ -148,15 +148,14 @@ const enav = new (require('electron-navigation'))({
     } else if (/about:blank/.test(current_url)) {
       document.querySelector("#nav-ctrls-url").focus()
       document.querySelector("#nav-source").classList.add("hidden")
-    } else if (/file:\/\/.*drive\.html$/.test(current_url)) {
+    } else if (/file:\/\/.*(drive|settings|bookmark|write)\.html$/.test(current_url)) {
       document.querySelector("#nav-ctrls-url").value = ""
       document.querySelector("#nav-ctrls-url").focus()
     }
     handleNav()
   },
-  newTabParams: ["file://" + dirname + "/drive.html", {
+  newTabParams: ["about:blank", {
     defaultFavicons: true,
-    node: true,
     icon: "file:///" + dirname + "/cap.png"
   }],
 });
@@ -195,6 +194,9 @@ enav._updateUrl = function(url) {
     current_url = url;
     let newUrl = url.replace(/file:\/\/\//i, "");
     oldUpdateUrl(newUrl);
+  } else if (/file:\/\/.*(drive|settings|bookmark|write)\.html$/.test(current_url)) {
+    document.querySelector("#nav-ctrls-url").value = ""
+    document.querySelector("#nav-ctrls-url").focus()
   } else if (url) {
     // todo: generalize
     if (url != "https://www.moneybutton.com/iframe/v2?format=postmessage") {
@@ -235,8 +237,10 @@ var home = enav.newTab("file://" + dirname + "/drive.html", {
   icon: "file:///" + dirname + "/cap.png",
   close: false,
   node: true,
+  readonlyUrl: true,
   webviewAttributes: {
     plugins: "",
+    readonlyUrl: true,
     preload: dirname + "/preload.js"
   },
 })
@@ -270,6 +274,7 @@ fs.readFile(settings_path, (err, data) => {
     let url = "file:///" + dirname + "/settings.html" 
     let source = enav.newTab(url, {
       node: true,
+      readonlyUrl: true,
       webviewAttributes: {
         plugins: "",
         preload: dirname + "/preload.js"
@@ -308,7 +313,7 @@ button({
     let new_url = "view-source:" + current_url
     let source = enav.newTab(new_url, {
       icon: "file:///" + dirname + "/code.png",
-      node: true,
+      readonlyUrl: true,
       webviewAttributes: {
         plugins: "",
         preload: dirname + "/preload.js"
@@ -323,6 +328,7 @@ button({
     let source = enav.newTab(new_url, {
       node: true,
       icon: "file:///" + dirname + "/wrench.png",
+      readonlyUrl: true,
       webviewAttributes: {
         plugins: "",
         preload: dirname + "/preload.js"
@@ -476,10 +482,8 @@ document.addEventListener("DOMContentLoaded", function(e) {
     }
     // New tab => Ctrl+T
     if (ctrlPressed && fromKeyCode(evt.keyCode) == 'T' || metaPressed && fromKeyCode(evt.keyCode) == 'T') {
-      //let tab = enav.newTab(navDefaultURL, {
-      let tab = enav.newTab("file://" + dirname + "/drive.html", {
+      let tab = enav.newTab("about:blank", {
         icon: "file:///" + dirname + "/cap.png",
-        node: true,
         webviewAttributes: {
           plugins: "", preload: dirname + "/preload.js"
         },
