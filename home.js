@@ -6,12 +6,6 @@ module.exports = {
       close: false,
       node: true,
       readonlyUrl: true,
-      webviewAttributes: {
-        plugins: "",
-        readonlyUrl: true,
-        preload: dirname + "/preload.js"
-      },
     });
-    home.setAttribute('plugins', '');
   }
 }

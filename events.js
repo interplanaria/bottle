@@ -79,7 +79,7 @@ module.exports = {
   init: function() {
     document.addEventListener("DOMContentLoaded", function(e) {
       ipcRenderer.on('open-url', (event, url) => {
-        webview.loadURL(url);
+        let tab = Nav.newTab(url, { icon: "file:///" + dirname + "/cap.png" })
       });
       document.querySelector("#nav-body-shortcuts").addEventListener("dragleave", function(ev) {
         ev.preventDefault();
