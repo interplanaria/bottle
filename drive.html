@@ -189,7 +189,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
   var sidebar_content = types.map(function(type) {
     return "<a class='row' id='" + type + "'>" + type + "</a>"
   }).join("");
-  document.querySelector("#frame").setAttribute("src", "https://bottle.bitdb.network/0.0.3.html");
+  document.querySelector("#frame").setAttribute("src", "https://bottle.bitdb.network/0.0.3.html?" + Date.now());
   document.querySelector("#sidebar .container").innerHTML = sidebar_content;
   document.querySelector("#bookmark").setAttribute("href", "file:///" + dirname + "/bookmark.html");
   document.querySelector("#bookmark img").setAttribute("src", "file:///" + dirname + "/star.png");
