@@ -9,6 +9,10 @@ const fs = require('fs');
 const URL = require('url');
 const request = require('request');
 const mime = require('mime-types');
+var res_headers;
+global.headers = function() {
+  return res_headers;
+}
 var load = function(type, req, callback) {
   if (type === 'b') {
     let key = req.url.substr(4);
@@ -83,6 +87,7 @@ var createWindow = function () {
     let new_url = eval('`'+settings.b+'`');
     let st = request(new_url);
     st.on('response', function(response) {
+      res_headers = response.headers;
       const pass = new PassThrough();
       st.pipe(pass);
       callback({
@@ -101,6 +106,7 @@ var createWindow = function () {
     let new_url = eval('`'+settings.c+'`');
     let st = request(new_url);
     st.on('response', function(response) {
+      res_headers = response.headers;
     	const pass = new PassThrough();
       st.pipe(pass);
       callback({
@@ -121,6 +127,7 @@ var createWindow = function () {
       let new_url = eval('`'+settings.b+'`');
       let st = request(new_url);
       st.on('response', function(response) {
+        res_headers = response.headers;
         const pass = new PassThrough();
         st.pipe(pass);
         callback({
@@ -134,6 +141,7 @@ var createWindow = function () {
       let new_url = eval('`'+settings.c+'`');
       let st = request(new_url);
       st.on('response', function(response) {
+        res_headers = response.headers;
         const pass = new PassThrough();
         st.pipe(pass);
         callback({
