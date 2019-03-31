@@ -1,5 +1,5 @@
-const { remote } = require('electron')
-const { Menu, MenuItem } = remote
+const { remote } = require('electron');
+const { Menu, MenuItem } = remote;
 const template = [
   {
     label: 'Edit',
@@ -61,7 +61,7 @@ if (process.platform === 'darwin') {
       { type: 'separator' },
       { role: 'quit' }
     ]
-  })
+  });
 
    // Edit menu
   template[1].submenu.push(
@@ -73,7 +73,7 @@ if (process.platform === 'darwin') {
         { role: 'stopspeaking' }
       ]
     }
-  )
+  );
 
    // Window menu
   template[3].submenu = [
@@ -84,7 +84,9 @@ if (process.platform === 'darwin') {
     { role: 'front' }
   ]
 }
-module.exports = function() {
-  const menu = Menu.buildFromTemplate(template)
-  Menu.setApplicationMenu(menu)
+module.exports = {
+  init: function() {
+    const menu = Menu.buildFromTemplate(template);
+    Menu.setApplicationMenu(menu);
+  }
 }

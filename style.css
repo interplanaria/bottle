@@ -23,6 +23,9 @@
   flex-direction: row;
   max-width: 100vw;
 }
+#nav-body-shortcuts.disabled > * {
+  display: none;
+}
 #nav-body-shortcuts {
   height: 25px;
   background: whitesmoke;
