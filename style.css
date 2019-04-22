@@ -7,7 +7,7 @@
   */
   -webkit-app-region: drag;
 }
-#nav-body-ctrls button {
+#nav-body-ctrls > * {
   -webkit-app-region: no-drag;
 }
 #nav-body-tabs {
