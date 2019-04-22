@@ -67,6 +67,10 @@ var refreshSettings = function() {
     }
   })
 }
+var extract = function(uri) {
+  let m = /^(b|c|file):[\/]+([^\/]+)/i.exec(uri)
+  return m[2];
+}
 var createWindow = function () {
   win = new BrowserWindow({
     titleBarStyle: 'hidden',
@@ -83,7 +87,7 @@ var createWindow = function () {
   refreshSettings();
   
   protocol.registerStreamProtocol('b', function(req, callback) {
-    let key = req.url.substr(4);
+    let key = extract(req.url)
     let new_url = eval('`'+settings.b+'`');
     let st = request(new_url);
     st.on('response', function(response) {
@@ -102,7 +106,7 @@ var createWindow = function () {
     }
   })
   protocol.registerStreamProtocol('c', function(req, callback) {
-    let key = req.url.substr(4);
+    let key = extract(req.url)
     let new_url = eval('`'+settings.c+'`');
     let st = request(new_url);
     st.on('response', function(response) {
@@ -123,7 +127,7 @@ var createWindow = function () {
   protocol.interceptStreamProtocol('file', function(req, callback) {
     const url = req.url.trim().substr(8);
     if (/^b:\/\//i.test(url)) {
-      let key = url.substr(4);
+      let key = extract(url)
       let new_url = eval('`'+settings.b+'`');
       let st = request(new_url);
       st.on('response', function(response) {
@@ -137,7 +141,7 @@ var createWindow = function () {
         });
       })
     } else if (/^c:\/\//i.test(url)) {
-      var key = url.substr(4);
+      let key = extract(url)
       let new_url = eval('`'+settings.c+'`');
       let st = request(new_url);
       st.on('response', function(response) {
