@@ -134,6 +134,11 @@ h1 {
   margin: 0;
   padding: 10px;
 }
+a.block.link {
+  color: rgba(0,0,0,0.4);
+  padding: 2px 0;
+  display: block;
+}
 </style>
 <script>
 const {remote} = require('electron');
@@ -172,11 +177,17 @@ var get = function(o) {
   }).then(function(r) {
     let items = r.u.concat(r.c);
     let html = items.map(function(item) {
+      let name;
+      if (item.out[0].s5 && item.out[0].s5 !== "|") {
+        name = item.out[0].s5.slice(0,200);
+      } else {
+        name = "b://" + item.b
+      }
       return "<div class='item' data-state='" + (item.blk ? "confirmed" : "unconfirmed") + "' data-url='c://" + item.c + "'>" +
-        "<div class='name'>" + (item.out[0].s5 ? item.out[0].s5.slice(0, 200) : "c://" + item.c) + "</div>" +
+        "<div class='name'>" + name + "</div>" +
         "<div class='meta'>" + item.out[0].s3 + " - " + (item.blk ? "block " + item.blk.i + " (" + timeago.format(item.blk.t * 1000) + ")" : "unconfirmed") + "</div>" +
-        "<a target='_blank' class='button' href='b://" + item.b + "'>b://</a>" +
-        "<a target='_blank' class='button' href='c://" + item.c + "'>c://</a>" +
+        `<a target='_blank' class='block link' href='b://${item.b}'>b://${item.b}</a>` +
+        `<a target='_blank' class='block link' href='c://${item.c}'>c://${item.c}</a>` +
       "</div>";
     }).join("");
     document.querySelector("#detail .list").innerHTML = html;
