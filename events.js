@@ -102,6 +102,11 @@ module.exports = {
           }
         }
       })
+      document.querySelector("#nav-ctrls-url").addEventListener("click", function(e) {
+        if (e.target.hasAttribute("readonly")) {
+          let source = Nav.newTab("")
+        }
+      })
       document.addEventListener("dragstart", ondragstart);
       document.addEventListener("drop", ondrop);
       document.addEventListener("keydown", onkeydown);
