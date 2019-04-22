@@ -122,7 +122,9 @@ enav._updateUrl = function(url) {
     }
   }
   if (Bookmarklet) {
-    Bookmarklet.update();
+    Bookmarklet.get().then(function(items) {
+      Bookmarklet.render(items);
+    })
   }
   handleNav();
 }
