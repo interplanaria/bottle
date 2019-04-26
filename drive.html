@@ -186,8 +186,8 @@ var get = function(o) {
       return "<div class='item' data-state='" + (item.blk ? "confirmed" : "unconfirmed") + "' data-url='c://" + item.c + "'>" +
         "<div class='name'>" + name + "</div>" +
         "<div class='meta'>" + item.out[0].s3 + " - " + (item.blk ? "block " + item.blk.i + " (" + timeago.format(item.blk.t * 1000) + ")" : "unconfirmed") + "</div>" +
-        `<a target='_blank' class='block link' href='b://${item.b}'>b://${item.b}</a>` +
-        `<a target='_blank' class='block link' href='c://${item.c}'>c://${item.c}</a>` +
+        `<a target='_blank' class='button' href='bit://19HxigV4QyBv3tHpQVcUEQyq1pzZVdoAut/${item.b}'>B:</a>` +
+        `<a target='_blank' class='button' href='bit://1KCm9cgDdT7r88WRQmm6gynFNmTrskdygn/${item.c}'>C:</a>` +
       "</div>";
     }).join("");
     document.querySelector("#detail .list").innerHTML = html;
