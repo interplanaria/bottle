@@ -78,8 +78,10 @@ var onkeydown = function(e) {
 module.exports = {
   init: function() {
     document.addEventListener("DOMContentLoaded", function(e) {
-      ipcRenderer.on('open-url', (event, url) => {
-        let tab = Nav.newTab(url, { icon: "file:///" + dirname + "/cap.png" })
+      ipcRenderer.on('open-tab', (event, url) => {
+        if (!/^bottle:.+/.test(url)) {
+          let tab = Nav.newTab(url, { icon: "file:///" + dirname + "/cap.png" })
+        }
       });
       document.querySelector("#nav-body-shortcuts").addEventListener("dragleave", function(ev) {
         ev.preventDefault();
@@ -92,7 +94,7 @@ module.exports = {
       document.querySelector("#nav-body-shortcuts").addEventListener("click", function(e) {
         if (e.target.className === 'shortcut') {
           let url = e.target.dataset.url;
-          if (/^(https?:|b:|c:).*/i.test(url)) {
+          if (/^(https?:|b:|c:|bit:|bottle:).*/i.test(url)) {
             document.querySelector("webview.nav-views-view.active").executeJavaScript("location.href='" + url + "'")
           } else if (/^javascript:/.test(url)) {
             let js = url.replace(/javascript:/, "");

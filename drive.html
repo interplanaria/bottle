@@ -100,7 +100,7 @@ input[type=text]:focus {
 .item .meta {
   color: rgba(0,0,0,0.8);
 }
-#bookmark, #write {
+#bookmark, #write, #home {
   padding: 10px 5px;
   display: block;
   font-size: 14px;
@@ -110,7 +110,7 @@ input[type=text]:focus {
   background: rgba(0,0,0,0.04);
   color: rgba(0,0,0,0.8);
 }
-#bookmark img , #write img{
+#bookmark img , #write img, #home img{
   height: 14px;
   vertical-align: text-bottom;
   margin-right: 5px;
@@ -200,8 +200,10 @@ document.addEventListener("DOMContentLoaded", function(e) {
   var sidebar_content = types.map(function(type) {
     return "<a class='row' id='" + type + "'>" + type + "</a>"
   }).join("");
-  document.querySelector("#frame").setAttribute("src", "https://bottle.bitdb.network/0.0.3.html?" + Date.now());
+  document.querySelector("#frame").setAttribute("src", "https://bottle.bitdb.network/0.0.4.html?" + Date.now());
   document.querySelector("#sidebar .container").innerHTML = sidebar_content;
+  document.querySelector("#home").setAttribute("href", "file:///" + dirname + "/drive.html");
+  document.querySelector("#home img").setAttribute("src", "file:///" + dirname + "/home.png");
   document.querySelector("#bookmark").setAttribute("href", "file:///" + dirname + "/bookmark.html");
   document.querySelector("#bookmark img").setAttribute("src", "file:///" + dirname + "/star.png");
   document.querySelector("#write").setAttribute("href", "file:///" + dirname + "/write.html");
@@ -254,6 +256,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
 <div class='content'>
   <div id='sidebar'>
     <form><input type='text' placeholder="Search"></form>
+    <a id='home'><img>Home</a>
     <a id='bookmark'><img>Bookmark</a>
     <a id='write'><img>Write</a>
     <div class='container'></div>

@@ -1,0 +1,199 @@
+<html>
+<head>
+<style>
+body {
+  font-family: Arial;
+  font-size: 12px;
+}
+.container {
+  padding: 50px; 
+  margin: 0 auto;
+  max-width: 800px;
+}
+.container input {
+  padding: 8px;
+  font-size: 14px;
+  width: 100%;
+}
+.row label {
+  padding: 5px 2px;
+  display: block;
+  font-size: 12px;
+}
+.row {
+  padding: 20px 0;
+  border-top: 1px solid rgba(0,0,0,0.1);
+  display: flex;
+}
+.row .col.img {
+  width: 200px; 
+  margin-left: 10px;
+}
+.row .col.img img {
+  width: 100%;
+}
+pre {
+  background: rgba(0,0,0,0.8);
+  color: white;
+  padding: 5px;
+}
+h3 {
+  margin: 5px 0;
+}
+button:focus, input:focus {
+  outline: none;
+}
+button {
+  background: gold;
+  padding: 10px 50px;
+  font-weight: bold;
+  border-radius: 3px;
+  border: none;
+}
+button.selected {
+  background: silver;
+}
+.flexible {
+  flex-grow: 1;
+}
+</style>
+<script id="item-template" type="text/x-handlebars-template">
+<div class='row'>
+  <div class='col flexible'>
+    <h3>{{name}}</h3>
+    <div>{{description}}</div>
+    <pre>{{route}}</pre>
+    {{#if url}}
+      <a target='_blank' href='{{url}}'>url</a>
+    {{/if}}
+  </div>
+  {{#if image}}
+    <div class='col img'><img class='block' src='{{image}}'></div>
+  {{/if}}
+</div>
+</script>
+<script>
+const fs = require('fs');
+const path = require('path');
+const Handlebars = require('handlebars');
+const {remote, ipcRenderer} = require('electron');
+const dirname = remote.app.getAppPath();
+const userPath = remote.app.getPath("userData");
+const templates = {
+  item: Handlebars.compile(document.querySelector("#item-template").innerHTML)
+}
+const get = function(query, cb) {
+  var b64 = btoa(JSON.stringify(query));
+  var url = "https://babel.bitdb.network/q/1DHDifPvtPgKFPZMRSxmVHhiPvFmxZwbfh/" + b64;
+  var header = { headers: { key: "1KJPjd3p8khnWZTkjhDYnywLB2yE1w5BmU" } };
+    fetch(url, header).then(function(r) {
+    return r.json()
+  }).then(function(r) {
+    cb(r)
+  })
+}
+const routes = function() {
+  return new Promise(function(resolve, reject) {
+    get({
+      v: 3,
+      q: {
+        find: {
+          "out.b0": { "op": 106 },
+          "out.s1": "$",
+          "out.s2": "route",
+        },
+        limit: 10000
+      },
+      r: {
+        f: "[.[] | { sender: .in[0].e.a, out: .out }]"
+      }
+    }, function(res) {
+      let r = [].concat(res.u).concat(res.c)
+      let bitcom = {}
+      r.reverse().forEach(function(item) {
+        if (item.out[0].s3 === 'enable') {
+          if (!bitcom[item.sender]) {
+            bitcom[item.sender] = {}
+          }
+          let routePath = item.out[0].s4;
+          if (!bitcom[item.sender][routePath]) {
+            bitcom[item.sender][routePath] = {}
+          }
+        } else if (item.out[0].s3 === 'add') {
+          console.log("item.out = ", item.out)
+          let address = item.out[0].s4;
+          let routePath = item.out[0].s5;
+          let endpoint = item.out[0].s6;
+          if (bitcom[address] && bitcom[address][routePath]) {
+            bitcom[address][routePath][item.sender] = endpoint;
+          }
+        }
+      })
+      resolve(bitcom);
+    })
+  })
+}
+const apps = function() {
+  return new Promise(function(resolve, reject) {
+    get({
+      v: 3,
+      q: {
+        find: {
+          "out.b0": { "op": 106 },
+          "out.s1": "$",
+          "out.s2": {
+            "$in": ["echo", "cat"]
+          },
+          "out.s5": { $in: ["name", "description", "url", "image"] }
+        },
+        limit: 10000
+      },
+      r: {
+        f: "[.[] | { address: .in[0].e.a, key: .out[0].s5, val: .out[0].s3 }]"
+      }
+    }, function(res) {
+      let r = [].concat(res.u).concat(res.c)
+      let bitcom = {}
+      r.forEach(function(item) {
+        if (!bitcom[item.address]) {
+          bitcom[item.address] = {}
+        }
+        if (!bitcom[item.address][item.key]) {
+          bitcom[item.address][item.key] = item.val
+        }
+      })
+      resolve(bitcom);
+    })
+  })
+}
+document.addEventListener("DOMContentLoaded", async function(e) {
+  console.log("Load")
+  let a = await apps()
+  let r = await routes()
+  let router = remote.getGlobal("router")
+  router(r)
+  console.log("Bitcom Route = ", r);
+  let rows = Object.keys(a).map(function(key) {
+    let b = a[key];
+    console.log("b = ", JSON.stringify(b,null,2));
+    let str = templates.item({
+      name: (b.name ? b.name : key),
+      description: (b.description ? b.description : ""),
+      route: key,
+      url: (b.url ? b.url : null),
+      image: (b.image ? b.image : null)
+    })
+    return str;
+  }).join("")
+  document.querySelector(".slot").innerHTML = rows;
+});
+</script>
+</head>
+<body>
+<div class='container'>
+<h1>Bitcom</h1>
+<div class='slot'>
+</div>
+</div>
+</body>
+</html>

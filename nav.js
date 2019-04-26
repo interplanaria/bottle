@@ -8,7 +8,10 @@ const handleNav = function() {
   if (/^view-source:.*/.test(current_url)) {
     if (src) src.classList.add("hidden");
     if (bookmark) bookmark.classList.add("hidden");
-  } else if (/^file:\/\/.*(drive|settings|bookmark|write)\.html/.test(current_url)) {
+  } else if (/^bottle:\/\/.*(com|drive|bitcom|settings|bookmark|write)\.html/.test(current_url)) {
+    if (src) src.classList.add("hidden");
+    if (bookmark) bookmark.classList.add("hidden");
+  } else if (/^file:\/\/.*(com|drive|bitcom|settings|bookmark|write)\.html/.test(current_url)) {
     if (src) src.classList.add("hidden");
     if (bookmark) bookmark.classList.add("hidden");
   } else if (/^chrome.*/.test(current_url)) {
@@ -25,12 +28,17 @@ const enav = new (require('electron-navigation'))({
     let newOptions = options;
     let newUrl = url;
     newOptions.icon = "file:///" + dirname + "/cap.png";
-    if (/(^c:\/\/|^b:\/\/).+/.test(url)) {
+    if (/(^c:\/\/|^b:\/\/|^bit:\/\/).+/.test(url)) {
       newOptions.title = url;
-    } else if (/file:\/\/\/[CB]:\/\/.*/i.test(url)) {
+    } else if (/file:\/\/\/(C|B|bit):\/\/.*/i.test(url)) {
       newUrl = url.replace(/file:\/\/\//, "").toLowerCase();
       newOptions.title = newUrl;
-    } else if (/^file:\/\/.*(drive|settings|bookmark|write)\.html/.test(url)) {
+    } else if (/^bottle:\/\/.*(com|drive|bitcom|settings|bookmark|write)\.html/.test(url)) {
+//      document.querySelector("#nav-ctrls-url").value = "";
+//      document.querySelector("#nav-ctrls-url").focus();
+      newOptions.title = "Bottle";
+      newOptions.webviewAttributes.nodeIntegration = true
+    } else if (/^file:\/\/.*(com|drive|bitcom|settings|bookmark|write)\.html/.test(url)) {
       document.querySelector("#nav-ctrls-url").value = "";
       document.querySelector("#nav-ctrls-url").focus();
       newOptions.title = "Bottle";
@@ -48,7 +56,9 @@ const enav = new (require('electron-navigation'))({
   },
   changeTabCallback: function(el) {
     let current_url = Route.set(el.getAttribute('src'));
-    if (/^file:\/\/.*(drive|settings|bookmark|write)\.html/.test(current_url)) {
+    if (/^file:\/\/.*(com|drive|bitcom|settings|bookmark|write)\.html/.test(current_url)) {
+      document.querySelector("#nav-body-shortcuts").classList.add("disabled");
+    } else if (/^bottle:\/\/.*(com|drive|bitcom|settings|bookmark|write)\.html/.test(current_url)) {
       document.querySelector("#nav-body-shortcuts").classList.add("disabled");
     } else {
       document.querySelector("#nav-body-shortcuts").classList.remove("disabled");
@@ -63,7 +73,10 @@ const enav = new (require('electron-navigation'))({
     } else if (/about:blank/.test(current_url)) {
       document.querySelector("#nav-ctrls-url").focus();
       document.querySelector("#nav-source").classList.add("hidden");
-    } else if (/file:\/\/.*(drive|settings|bookmark|write)\.html$/.test(current_url)) {
+    } else if (/bottle:\/\/.*(com|drive|bitcom|settings|bookmark|write)\.html$/.test(current_url)) {
+//      document.querySelector("#nav-ctrls-url").value = "";
+//      document.querySelector("#nav-ctrls-url").focus();
+    } else if (/file:\/\/.*(com|drive|bitcom|settings|bookmark|write)\.html$/.test(current_url)) {
       document.querySelector("#nav-ctrls-url").value = "";
       document.querySelector("#nav-ctrls-url").focus();
     }
@@ -86,9 +99,13 @@ enav._purifyUrl = function(str) {
   let url = str.trim();
   if (/^[13][a-km-zA-HJ-NP-Z0-9]{26,33}$/.test(url)) {
     url = "bitcoin:" + url;
-  } else if (/^b?:\/\/.*/i.test(url)) {
+  } else if (/^bit?:\/\/.*/i.test(url)) {
   } else if (/^c?:\/\/.*/i.test(url)) {
-  } else if (/file:\/\/\/[CB]:\/\/.*/i.test(url)) {
+//  } else if (/bottle:\/\/(C|B|bit):\/\/.*/i.test(url)) {
+//    url = url.replace(/bottle:\/\//i, "");
+  } else if (/bottle:.*/i.test(url)) {
+  } else if (/^b?:\/\/.*/i.test(url)) {
+  } else if (/file:\/\/\/(C|B|bit):\/\/.*/i.test(url)) {
     url = url.replace(/file:\/\/\//i, "");
   } else if (/file:.*/i.test(url)) {
   } else if (/^\/.*/i.test(url)) {
@@ -106,13 +123,21 @@ enav._purifyUrl = function(str) {
 var oldUpdateUrl = enav._updateUrl;
 enav._updateUrl = function(url) {
   let current_url = Route.get();
-  if (/file:\/\/\/[bc]:\/\//i.test(url)) {
+  if (/file:\/\/\/(b|c|bit):\/\//i.test(url)) {
     let newUrl = url.replace(/file:\/\/\//i, "");
     current_url = Route.set(newUrl);
     oldUpdateUrl(newUrl);
-  } else if (/file:\/\/.*(drive|settings|bookmark|write)\.html$/.test(current_url)) {
+  } else if (/file:\/\/.*(com|drive|bitcom|settings|bookmark|write)\.html$/.test(current_url)) {
     document.querySelector("#nav-ctrls-url").value = "";
     document.querySelector("#nav-ctrls-url").focus();
+//  } else if (/bottle:\/\/(b|c|bit):\/\//i.test(url)) {
+//    let newUrl = url.replace(/bottle:\/\//i, "");
+//    //current_url = Route.set(newUrl);
+//    current_url = Route.set(url);
+//    oldUpdateUrl(url);
+//  } else if (/bottle:\/\/.*(com|drive|bitcom|settings|bookmark|write)\.html$/.test(current_url)) {
+//    document.querySelector("#nav-ctrls-url").value = "";
+//    document.querySelector("#nav-ctrls-url").focus();
   } else if (url) {
     // todo: generalize
     if (url != "https://www.moneybutton.com/iframe/v2?format=postmessage") {
@@ -169,9 +194,26 @@ button({
     source.setAttribute('plugins', '');
   }
 })
+/*
 button({
   id: "nav-settings", title: "settings", icon: "file:///" + dirname + "/wrench.png", onclick: function(e) {
     let new_url = "file:///" + dirname + "/settings.html";
+    let source = Nav.newTab(new_url, {
+      node: true,
+      icon: "file:///" + dirname + "/wrench.png",
+      readonlyUrl: true,
+      webviewAttributes: {
+        plugins: "",
+        preload: dirname + "/preload.js"
+      },
+    })
+    source.setAttribute('plugins', '');
+  }
+})
+*/
+button({
+  id: "nav-settings", title: "settings", icon: "file:///" + dirname + "/wrench.png", onclick: function(e) {
+    let new_url = "file:///" + dirname + "/bitcom.html";
     let source = Nav.newTab(new_url, {
       node: true,
       icon: "file:///" + dirname + "/wrench.png",
