@@ -55,7 +55,6 @@ var addEvents = enav._addEvents;
 
 enav._addEvents = function (sessionID, options) {
   let wv = addEvents(sessionID, options);
-  //wv.on("did-fail-load", function(res) {
   wv.addEventListener("did-fail-load", function(res) {
     console.log("#### Err = ", res)
     if (res.errorCode != -3) {
