@@ -84,6 +84,14 @@ module.exports = {
           let tab = Nav.newTab(url, { icon: "bottle://assets/cap.png" })
         }
       });
+      ipcRenderer.on('resolve-error', (event, address) => {
+        let url = document.querySelector("#nav-ctrls-url").value;
+        console.log("url = ", url);
+        if (/^bit:.+/.test(url)) {
+          let html = "<div><i class='fas fa-exclamation-circle'></i> Connection required</div><div class='flexible'></div><a href='bottle://bitcom?address=" + address + "' target='_blank' class='btn'>Connect to " + address + "</a>";;
+          document.querySelector("#nav-footer .sub").innerHTML = html;
+        }
+      });
       document.querySelector("#nav-body-shortcuts").addEventListener("dragleave", function(ev) {
         ev.preventDefault();
         document.querySelector("#nav-body-shortcuts").style.backgroundColor = "whitesmoke";
@@ -105,13 +113,6 @@ module.exports = {
           }
         }
       })
-//      document.querySelector("#nav-ctrls-url").addEventListener("click", function(e) {
-//        console.log("e.target.value = ", e.target.value);
-//        if (/^bottle:.*/i.test(e.target.value)) {
-//          e.preventDefault();
-//          let source = Nav.newTab("about:blank", {})
-//        }
-//      })
       document.addEventListener("dragstart", ondragstart);
       document.addEventListener("drop", ondrop);
       document.addEventListener("keydown", onkeydown);

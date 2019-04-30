@@ -57,9 +57,9 @@ enav._addEvents = function (sessionID, options) {
   let wv = addEvents(sessionID, options);
   //wv.on("did-fail-load", function(res) {
   wv.addEventListener("did-fail-load", function(res) {
+    console.log("#### Err = ", res)
     if (res.errorCode != -3) {
       let m = /bit:\/\/([^\/]+)\/.*/i.exec(res.validatedURL)
-      console.log("RES = ", res)
       if (m && m.length > 0) {
         console.log(m)
         let style = "var style = document.body.style; style.padding='100px'; style.textAlign='center'; style.margin=0; style.background='rgba(0,0,0,0.9)'; style.color='white'; style.fontFamily='Menlo,monaco,monospace'; style.fontSize='11px';"
@@ -78,6 +78,7 @@ enav._addEvents = function (sessionID, options) {
 var updateUrl = enav._updateUrl;
 enav._updateUrl = function(url) {
   let current_url = Route.get();
+  document.querySelector("#nav-footer .sub").innerHTML = "";
   if (url === current_url) {
     console.log("current_url = ", current_url);
     console.log("updateURL = ", url);
@@ -85,16 +86,16 @@ enav._updateUrl = function(url) {
     let m = /bit:\/\/([^\/]+)\/.*/i.exec(url);
     if (m && m.length > 0) {
       let connection = router.get(m[1]);
-      if (connection) {
+      if (connection && Object.keys(connection).length > 0) {
         let _path = Object.keys(connection)[0];
         let _endpoint = connection[_path];
         let _addr = Object.keys(_endpoint)[0];
         let _api = Object.values(_endpoint)[0];
-        let html = "<div><i class='fas fa-plug'></i> bit://" + m[1] + "/" + _path + " <i class='fas fa-angle-double-right'></i> " + _api + "</div><div class='flexible'></div><a href='bottle://bitcom?address=" + m[1] + "' target='_blank' class='btn'>Settings</a>";;
-        document.querySelector("#nav-footer").innerHTML = html;
+        let html = "<div><i class='fas fa-plug'></i> " + _path + " <i class='fas fa-angle-double-right'></i> " + _api + "</div><div class='flexible'></div><a href='bottle://bitcom?address=" + m[1] + "' target='_blank' class='btn'>Settings</a>";;
+        document.querySelector("#nav-footer .main").innerHTML = html;
       }
     } else {
-      document.querySelector("#nav-footer").innerHTML = "";
+      document.querySelector("#nav-footer .main").innerHTML = "";
     }
   }
 }

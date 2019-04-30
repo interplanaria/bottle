@@ -77,41 +77,19 @@ global.router = {
           if (!routeState[k]) {
             routeState[k] = {};
           }
-          console.log("o = ", o);
-          /*
-          if (!routeState[k][path]) {
+          if (routeState[k][path]) {
+            delete routeState[k][path];
+            delete routeMap[k][service_address];
+          } else {
             routeState[k][path] = {}
-          }
-          */
-          routeState[k][path] = {}
-          routeState[k][path][service_address] = o;
-          /*
-          if (routeState[k][path][service_address]) {
-            // remove service_address 
-            delete routeState[k][path][service_address];
-          } else {
             routeState[k][path][service_address] = o;
-          }
-          */
-          let matcher = {
-            i: new Route(k + path),
-            o: Handlebars.compile(o)
-          }
-          /*
-          if (!routeMap[k]) {
+            let matcher = {
+              i: new Route(k + path),
+              o: Handlebars.compile(o)
+            }
             routeMap[k] = {}
-          }
-          */
-          routeMap[k] = {}
-          routeMap[k][service_address] = matcher;
-          /*
-          if (routeMap[k][service_address]) {
-            // remove service_address
-            delete routeMap[k][service_address]; 
-          } else {
             routeMap[k][service_address] = matcher;
           }
-          */
         }
       })
       console.log("routeState = ", routeState);
@@ -165,7 +143,6 @@ global.router = {
     fs.writeFile(router_path, JSON.stringify(routeState, null, 2), function(err, data) {
       console.log("Saved routeState", routeState);
     });
-  //  var route = new Route(extracted.key)
   }
 }
 var extract = function(uri) {
@@ -182,12 +159,6 @@ var extract = function(uri) {
     return null;
   }
 }
-// var extract = function(uri) {
-//   console.log("URI = ", uri)
-//   let m = /^(bottle|b|c|file):[\/]+([^\/]+)/i.exec(uri)
-//   console.log("m = ", m)
-//   return m[2];
-// }
 var extractBit = function(uri) {
   console.log("Trying to extract", uri);
   let m = /^bit:[\/]+([^\/]+)\/([^?#]+)/i.exec(uri)
@@ -241,10 +212,12 @@ const resolver = function(extracted, callback, raw) {
       })
     } else {
       console.log("Not resolved")
+      win.webContents.send("resolve-error", addr);
       callback({ statusCode: 404 })
     }
   } else {
     console.log("Not resolved")
+    win.webContents.send("resolve-error", addr);
     callback({ statusCode: 404 })
   }
 }

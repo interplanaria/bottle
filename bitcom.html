@@ -41,7 +41,7 @@ pre {
   padding: 5px;
 }
 h1 {
-  font-size: 80px;
+  font-size: 50px;
   margin: 0;
   max-width: 800px;
   word-wrap: break-word;
@@ -334,19 +334,7 @@ const render = function() {
     image: (meta.image ? meta.image : null)
   })
   console.log("logs = ", logs)
-  /*
-  let lstr = templates.log({
-    items: logs.map(function(l) {
-      return {
-        content: JSON.stringify(l, null, 2)
-      }
-    })
-  })
-  console.log("str = ", str)
-  console.log("lstr = ", lstr)
-  */
   document.querySelector(".slot").innerHTML = str;
-  //document.querySelector(".logs").innerHTML = lstr;
 }
 document.addEventListener("DOMContentLoaded", async function(e) {
   console.log("Load")
@@ -360,7 +348,6 @@ document.addEventListener("DOMContentLoaded", async function(e) {
   console.log("Meta = ", JSON.stringify(meta, null, 2));
   await route.enable(address)
   await route.add(address)
-  //await log(address)
   render();
 
   document.querySelectorAll("button").forEach(function(el) {
