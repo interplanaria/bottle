@@ -3,12 +3,14 @@
 <head>
 <meta charset="UTF-8" />
 <link href="./style.css" rel='stylesheet'>
+<link href="bottle://fa/css/all.css" rel="stylesheet">
 </head>
 <body>
 <div id="nav-body-ctrls"></div>
 <div id="nav-body-shortcuts"></div>
 <div id="nav-body-tabs"></div>
 <div id="nav-body-views"></div>
+<div id="nav-footer"></div>
 <script>
 const fs = require('fs');
 const path = require('path');
@@ -27,7 +29,6 @@ const Bookmarklet = require('./bookmarklet');
 const URIScheme = require('./urischeme');
 URIScheme.init();
 Menu.init();
-Settings.init();
 Home.init();
 Events.init();
 </script>

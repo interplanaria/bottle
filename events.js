@@ -34,8 +34,9 @@ var onkeydown = function(e) {
   }
   // New tab => Ctrl+T
   if (ctrlPressed && Util.fromKeyCode(evt.keyCode) == 'T' || metaPressed && Util.fromKeyCode(evt.keyCode) == 'T') {
+    document.querySelector("#nav-ctrls-url").blur();
     let tab = Nav.newTab("about:blank", {
-      icon: "file:///" + dirname + "/cap.png",
+      icon: "bottle://assets/cap.png",
       webviewAttributes: {
         plugins: "", preload: dirname + "/preload.js"
       },
@@ -80,7 +81,7 @@ module.exports = {
     document.addEventListener("DOMContentLoaded", function(e) {
       ipcRenderer.on('open-tab', (event, url) => {
         if (!/^bottle:.+/.test(url)) {
-          let tab = Nav.newTab(url, { icon: "file:///" + dirname + "/cap.png" })
+          let tab = Nav.newTab(url, { icon: "bottle://assets/cap.png" })
         }
       });
       document.querySelector("#nav-body-shortcuts").addEventListener("dragleave", function(ev) {
@@ -104,11 +105,13 @@ module.exports = {
           }
         }
       })
-      document.querySelector("#nav-ctrls-url").addEventListener("click", function(e) {
-        if (e.target.hasAttribute("readonly")) {
-          let source = Nav.newTab("")
-        }
-      })
+//      document.querySelector("#nav-ctrls-url").addEventListener("click", function(e) {
+//        console.log("e.target.value = ", e.target.value);
+//        if (/^bottle:.*/i.test(e.target.value)) {
+//          e.preventDefault();
+//          let source = Nav.newTab("about:blank", {})
+//        }
+//      })
       document.addEventListener("dragstart", ondragstart);
       document.addEventListener("drop", ondrop);
       document.addEventListener("keydown", onkeydown);

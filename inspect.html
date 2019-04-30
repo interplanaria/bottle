@@ -1,0 +1,62 @@
+<html>
+<head>
+<style>
+body {
+  margin: 0;
+}
+textarea:focus {
+  outline: none;
+}
+textarea {
+  padding: 10px;
+  background: rgba(0,0,0,0.9);
+  color: burlywood;
+  font-family: Menlo, monaco, monospace;
+  border: none;
+  width: 100%;
+  height: 100%;
+  font-size: 11px;
+}
+</style>
+<script>
+let params = (new URL(document.location)).searchParams;
+let uri = params.get("uri");
+let tx = params.get("tx");
+const header = { headers: { key: "16JaLJ8b5UvQp355Gva2qhuTS65NkowhPr    " } };
+const g = function(query, cb) {
+  var b64 = btoa(JSON.stringify(query));
+  var url = "https://genesis.bitdb.network/q/1FnauZ9aUH2Bex6JzdcV4eNX7oLSSEbxtN/" + b64;
+  fetch(url, header).then(function(r) {
+    return r.json()
+  }).then(function(r) {
+    cb(r)
+  })
+}
+document.addEventListener("DOMContentLoaded", function(e) {
+  if (uri) {
+    fetch(uri).then(function(res) {
+      return res.text();
+    }).then(function(res) {
+      document.querySelector("textarea").value = res
+    })
+  } else if (tx) {
+    g({
+      v: 3,
+      q: {
+        find: { "tx.h": tx }
+      }
+    }, function(r) {
+      let res = r.u.concat(r.c).filter(function(k) {
+        return k
+      })
+      document.querySelector("textarea").value = JSON.stringify(res, null, 2)
+    })
+  }
+})
+</script>
+</head>
+<body>
+<textarea>
+</textarea>
+</body>
+</html>

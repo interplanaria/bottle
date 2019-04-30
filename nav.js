@@ -5,49 +5,32 @@ const handleNav = function() {
   let current_url = Route.get();
   let src = document.querySelector("#nav-source");
   let bookmark = document.querySelector("#nav-bookmark");
-  if (/^view-source:.*/.test(current_url)) {
+  let bar = document.querySelector("#nav-body-shortcuts");
+  if (/^bottle:\/\/.*/.test(current_url)) {
     if (src) src.classList.add("hidden");
+    if (bar) bar.classList.add("disabled");
     if (bookmark) bookmark.classList.add("hidden");
-  } else if (/^bottle:\/\/.*(com|drive|bitcom|bookmark|write)\.html/.test(current_url)) {
-    if (src) src.classList.add("hidden");
-    if (bookmark) bookmark.classList.add("hidden");
-  } else if (/^file:\/\/.*(com|drive|bitcom|bookmark|write)\.html/.test(current_url)) {
-    if (src) src.classList.add("hidden");
-    if (bookmark) bookmark.classList.add("hidden");
-  } else if (/^chrome.*/.test(current_url)) {
-    if (src) src.classList.add("hidden");
   } else {
     if (src) src.classList.remove("hidden");
+    if (bar) bar.classList.remove("disabled");
     if (bookmark) bookmark.classList.remove("hidden");
   }
 }
+const router = remote.getGlobal("router")
 
 // Create Nav
 const enav = new (require('electron-navigation'))({
   newTabCallback: function(url, options) {
+    console.log("URL = ", url)
     let newOptions = options;
     let newUrl = url;
-    newOptions.icon = "file:///" + dirname + "/cap.png";
+    newOptions.icon = "bottle://assets/cap.png";
     if (/^bottle:\/\/.*/.test(url)) {
       newOptions.webviewAttributes.nodeIntegration = true;
+      newOptions.title = newUrl;
+      newOptions.webviewAttributes.readonlyUrl = true;
+      newOptions.readonlyUrl = true;
     }
-//     if (/(^c:\/\/|^b:\/\/|^bit:\/\/).+/.test(url)) {
-//       newOptions.title = url;
-//     } else if (/file:\/\/\/(C|B|bit):\/\/.*/i.test(url)) {
-//       newUrl = url.replace(/file:\/\/\//, "").toLowerCase();
-//       newOptions.title = newUrl;
-//     } else if (/^bottle:\/\/.*(com|drive|bitcom|settings|bookmark|write)\.html/.test(url)) {
-// //      document.querySelector("#nav-ctrls-url").value = "";
-// //      document.querySelector("#nav-ctrls-url").focus();
-//       newOptions.title = "Bottle";
-//       newOptions.webviewAttributes.nodeIntegration = true
-//     } else if (/^file:\/\/.*(com|drive|bitcom|settings|bookmark|write)\.html/.test(url)) {
-//       document.querySelector("#nav-ctrls-url").value = "";
-//       document.querySelector("#nav-ctrls-url").focus();
-//       newOptions.title = "Bottle";
-//     } else {
-//       newOptions.title = "Bottle";
-//     }
     Route.set(url);
     newOptions.webviewAttributes.plugins = "";
     newOptions.webviewAttributes.defaultEncoding = "utf-8";
@@ -58,104 +41,72 @@ const enav = new (require('electron-navigation'))({
     return ret;
   },
   changeTabCallback: function(el) {
-//     let current_url = Route.set(el.getAttribute('src'));
-//     if (/^file:\/\/.*(com|drive|bitcom|settings|bookmark|write)\.html/.test(current_url)) {
-//       document.querySelector("#nav-body-shortcuts").classList.add("disabled");
-//     } else if (/^bottle:\/\/.*(com|drive|bitcom|settings|bookmark|write)\.html/.test(current_url)) {
-//       document.querySelector("#nav-body-shortcuts").classList.add("disabled");
-//     } else {
-//       document.querySelector("#nav-body-shortcuts").classList.remove("disabled");
-//     }
-//     if (/^view-source:.*/.test(current_url)) {
-//       let original_url = current_url.slice(12);
-//       fetch(original_url).then(function(res) {
-//         return res.text();
-//       }).then(function(res) {
-//         el.loadURL("data:text/plain;base64," + Util.utoa(res));
-//       });
-//     } else if (/about:blank/.test(current_url)) {
-//       document.querySelector("#nav-ctrls-url").focus();
-//       document.querySelector("#nav-source").classList.add("hidden");
-//     } else if (/bottle:\/\/.*(com|drive|bitcom|settings|bookmark|write)\.html$/.test(current_url)) {
-// //      document.querySelector("#nav-ctrls-url").value = "";
-// //      document.querySelector("#nav-ctrls-url").focus();
-//     } else if (/file:\/\/.*(com|drive|bitcom|settings|bookmark|write)\.html$/.test(current_url)) {
-//       document.querySelector("#nav-ctrls-url").value = "";
-//       document.querySelector("#nav-ctrls-url").focus();
-//     }
-    //handleNav()
+    let current_url = Route.set(el.getAttribute('src'));
+    handleNav()
   },
-  newTabParams: ["", {
+  newTabParams: ["about:blank", {
     defaultFavicons: true,
-    icon: "file:///" + dirname + "/cap.png"
+    icon: "bottle://assets/cap.png"
   }],
 });
 
+
+var addEvents = enav._addEvents;
+
+enav._addEvents = function (sessionID, options) {
+  let wv = addEvents(sessionID, options);
+  //wv.on("did-fail-load", function(res) {
+  wv.addEventListener("did-fail-load", function(res) {
+    if (res.errorCode != -3) {
+      let m = /bit:\/\/([^\/]+)\/.*/i.exec(res.validatedURL)
+      console.log("RES = ", res)
+      if (m && m.length > 0) {
+        console.log(m)
+        let style = "var style = document.body.style; style.padding='100px'; style.textAlign='center'; style.margin=0; style.background='rgba(0,0,0,0.9)'; style.color='white'; style.fontFamily='Menlo,monaco,monospace'; style.fontSize='11px';"
+        let s = style + " document.body.innerHTML='<div>" +
+          "<div>The protocol is not yet connected. Please connect with an endpoint</div>" +
+          "<a style=\"margin: 20px; background: burlywood; padding: 10px; border-radius: 2px; text-decoration: none; display: inline-block; padding: 10px; color: rgba(0,0,0,0.8); border: 1px solid rgba(0,0,0,0.3); \" target=\"_blank\" href=\"bottle://bitcom?address=" + m[1] + "\">Connect to " + m[1] + "</a>" +
+          "</div>';";
+        console.log("s = ", s)
+        wv.executeJavaScript(s);
+      }
+    }
+  })
+  return wv;
+}
+
+var updateUrl = enav._updateUrl;
+enav._updateUrl = function(url) {
+  let current_url = Route.get();
+  if (url === current_url) {
+    console.log("current_url = ", current_url);
+    console.log("updateURL = ", url);
+    updateUrl(url);
+    let m = /bit:\/\/([^\/]+)\/.*/i.exec(url);
+    if (m && m.length > 0) {
+      let connection = router.get(m[1]);
+      if (connection) {
+        let _path = Object.keys(connection)[0];
+        let _endpoint = connection[_path];
+        let _addr = Object.keys(_endpoint)[0];
+        let _api = Object.values(_endpoint)[0];
+        let html = "<div><i class='fas fa-plug'></i> bit://" + m[1] + "/" + _path + " <i class='fas fa-angle-double-right'></i> " + _api + "</div><div class='flexible'></div><a href='bottle://bitcom?address=" + m[1] + "' target='_blank' class='btn'>Settings</a>";;
+        document.querySelector("#nav-footer").innerHTML = html;
+      }
+    } else {
+      document.querySelector("#nav-footer").innerHTML = "";
+    }
+  }
+}
 
 /***********************************************************************
 *
 *  Override Nav Methods
 *
 ***********************************************************************/
-// 1. _purifyUrl Override
-// enav._purifyUrl = function(str) {
-//   let url = str.trim();
-//   if (/^[13][a-km-zA-HJ-NP-Z0-9]{26,33}$/.test(url)) {
-//     url = "bitcoin:" + url;
-//   } else if (/^bit?:\/\/.*/i.test(url)) {
-//   } else if (/^c?:\/\/.*/i.test(url)) {
-// //  } else if (/bottle:\/\/(C|B|bit):\/\/.*/i.test(url)) {
-// //    url = url.replace(/bottle:\/\//i, "");
-//   } else if (/bottle:.*/i.test(url)) {
-//   } else if (/^b?:\/\/.*/i.test(url)) {
-//   } else if (/file:\/\/\/(C|B|bit):\/\/.*/i.test(url)) {
-//     url = url.replace(/file:\/\/\//i, "");
-//   } else if (/file:.*/i.test(url)) {
-//   } else if (/^\/.*/i.test(url)) {
-//     url = "file:///" + dirname + url;
-//   } else if (/^https?:\/\/.*/i.test(url)) {
-//     url = (url.match(/^https?:\/\/.*/i)) ? url : 'http://' + url;
-//   } else if (/^view-source:.*/.test(url)) {
-//   } else if (/^chrome-devtools:.*/.test(url)) {
-//   } else {
-//     url = "about:blank";
-//   }
-//   return url;
-// }
-// 2. _updateUrl Override
-// var oldUpdateUrl = enav._updateUrl;
-// enav._updateUrl = function(url) {
-//   let current_url = Route.get();
-//   if (/file:\/\/\/(b|c|bit):\/\//i.test(url)) {
-//     let newUrl = url.replace(/file:\/\/\//i, "");
-//     current_url = Route.set(newUrl);
-//     oldUpdateUrl(newUrl);
-//   } else if (/file:\/\/.*(com|drive|bitcom|settings|bookmark|write)\.html$/.test(current_url)) {
-//     document.querySelector("#nav-ctrls-url").value = "";
-//     document.querySelector("#nav-ctrls-url").focus();
-// //  } else if (/bottle:\/\/(b|c|bit):\/\//i.test(url)) {
-// //    let newUrl = url.replace(/bottle:\/\//i, "");
-// //    //current_url = Route.set(newUrl);
-// //    current_url = Route.set(url);
-// //    oldUpdateUrl(url);
-// //  } else if (/bottle:\/\/.*(com|drive|bitcom|settings|bookmark|write)\.html$/.test(current_url)) {
-// //    document.querySelector("#nav-ctrls-url").value = "";
-// //    document.querySelector("#nav-ctrls-url").focus();
-//   } else if (url) {
-//     // todo: generalize
-//     if (url != "https://www.moneybutton.com/iframe/v2?format=postmessage") {
-//       current_url = Route.set(url);
-//       //handleNav()
-//       oldUpdateUrl(current_url);
-//     }
-//   }
-//   if (Bookmarklet) {
-//     Bookmarklet.get().then(function(items) {
-//       Bookmarklet.render(items);
-//     })
-//   }
-//   handleNav();
-// }
+enav._purifyUrl = function(str) {
+  return str.trim();
+}
 
 /***********************************************************************
 *
@@ -169,7 +120,7 @@ var button = function(o) {
   d.addEventListener("click", o.onclick);
 }
 button({
-  id: "nav-bookmark", hidden: true, title: "bookmark", icon: "file:///" + dirname + "/star.png", onclick: function(e) {
+  id: "nav-bookmark", hidden: true, title: "bookmark", icon: "bottle://assets/star.png", onclick: function(e) {
     let current_url = Route.get();
     let match = /chrome:\/\/[^/]+\/index\.html\?src=(.+)$/g.exec(current_url);
     if (match && match.length > 1) {
@@ -183,50 +134,13 @@ button({
   }
 });
 button({
-  id: "nav-source", hidden: true, title: "view source", icon: "file:///" + dirname + "/code.png", onclick: function(e) {
+  id: "nav-source", hidden: true, title: "view source", icon: "bottle://assets/code.png", onclick: function(e) {
     let current_url = Route.get();
-    let new_url = "view-source:" + current_url;
+    let new_url = "bottle://inspect?uri=" + current_url;
     let source = Nav.newTab(new_url, {
-      icon: "file:///" + dirname + "/code.png",
+      icon: "bottle://assets/code.png",
       readonlyUrl: true,
-      webviewAttributes: {
-        plugins: "",
-        preload: dirname + "/preload.js"
-      },
     })
-    source.setAttribute('plugins', '');
-  }
-})
-/*
-button({
-  id: "nav-settings", title: "settings", icon: "file:///" + dirname + "/wrench.png", onclick: function(e) {
-    let new_url = "file:///" + dirname + "/settings.html";
-    let source = Nav.newTab(new_url, {
-      node: true,
-      icon: "file:///" + dirname + "/wrench.png",
-      readonlyUrl: true,
-      webviewAttributes: {
-        plugins: "",
-        preload: dirname + "/preload.js"
-      },
-    })
-    source.setAttribute('plugins', '');
-  }
-})
-*/
-button({
-  id: "nav-settings", title: "settings", icon: "file:///" + dirname + "/wrench.png", onclick: function(e) {
-    let new_url = "file:///" + dirname + "/bitcom.html";
-    let source = Nav.newTab(new_url, {
-      node: true,
-      icon: "file:///" + dirname + "/wrench.png",
-      readonlyUrl: true,
-      webviewAttributes: {
-        plugins: "",
-        preload: dirname + "/preload.js"
-      },
-    })
-    source.setAttribute('plugins', '');
   }
 })
 

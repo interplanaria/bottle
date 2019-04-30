@@ -11,10 +11,13 @@ const mime = require('mime-types');
 const Route = require('route-parser');
 const Handlebars = require('handlebars');
 const CONSTANTS = require('./constants');
+const router_path = path.join(userPath, '.', 'router.json');
+
 var res_headers;
-var routes = [];
+var routes = {};
 var routeMap = {};
 var routeState = {};
+var routeMem = {};
 global.headers = function() {
   return res_headers;
 }
@@ -23,7 +26,7 @@ global.router = {
     return routeState[address];
   },
   add: function(r) {
-    routes = [];
+    routes = {};
     /**
     *
     * [1] From the following object:
@@ -75,14 +78,40 @@ global.router = {
             routeState[k] = {};
           }
           console.log("o = ", o);
+          /*
           if (!routeState[k][path]) {
-            routeState[k][path] = o
+            routeState[k][path] = {}
           }
+          */
+          routeState[k][path] = {}
+          routeState[k][path][service_address] = o;
+          /*
+          if (routeState[k][path][service_address]) {
+            // remove service_address 
+            delete routeState[k][path][service_address];
+          } else {
+            routeState[k][path][service_address] = o;
+          }
+          */
           let matcher = {
-            i: new Route(k.toLowerCase() + path),
+            i: new Route(k + path),
             o: Handlebars.compile(o)
           }
-          routeMap[k] = matcher;
+          /*
+          if (!routeMap[k]) {
+            routeMap[k] = {}
+          }
+          */
+          routeMap[k] = {}
+          routeMap[k][service_address] = matcher;
+          /*
+          if (routeMap[k][service_address]) {
+            // remove service_address
+            delete routeMap[k][service_address]; 
+          } else {
+            routeMap[k][service_address] = matcher;
+          }
+          */
         }
       })
       console.log("routeState = ", routeState);
@@ -92,16 +121,30 @@ global.router = {
     *
     * [3] Generate routes from routeMap
     * 
-    * routes := [
+    * routes := {
+    *  "19HxigV4QyBv3tHpQVcUEQyq1pzZVdoAut": [
     *   { i: new Route("19HxigV4QyBv3tHpQVcUEQyq1pzZVdoAut/:tx"), o: Handlebars.compile("https://data.bitdb.network/1KuUr2pSJDao97XM8Jsq8zwLS6W1WtFfLg/b/{{tx}}") },
+    *   { i: new Route("19HxigV4QyBv3tHpQVcUEQyq1pzZVdoAut/:tx"), o: Handlebars.compile("https://bitpaste.app/{{tx}}") },
+    *  ],
+    *  "1KCm9cgDdT7r88WRQmm6gynFNmTrskdygn": [
     *   { i: new Route("1KCm9cgDdT7r88WRQmm6gynFNmTrskdygn/:hash"), o: Handlebars.compile("https://data.bitdb.network/1KuUr2pSJDao97XM8Jsq8zwLS6W1WtFfLg/c/{{hash}}") },
+    *   ..
     *   { i: new Route("1BurpBxnLyL87Q8XwU9X6J1wCd3VUa7rMU/LBM/:page"), o: Handlebars.compile("https://londonbitcoinmeetup.com/") },
     *   ...
     * ]
     *
     */
     for(let key in routeMap) {
-      routes.push(routeMap[key])
+      if (!routes[key]) {
+        routes[key] = [];
+      }
+      let endpoints = routeMap[key];
+      for(let j in endpoints) {
+        routes[key].push({
+          endpoint: j,
+          matcher: endpoints[j]
+        })
+      }
     }
     /*
     * [4] Later it can be matched sequentially
@@ -119,6 +162,9 @@ global.router = {
     */
     console.log("ROUTE Map = ", routeMap)
     console.log("ROUTER = ", routes)
+    fs.writeFile(router_path, JSON.stringify(routeState, null, 2), function(err, data) {
+      console.log("Saved routeState", routeState);
+    });
   //  var route = new Route(extracted.key)
   }
 }
@@ -159,7 +205,48 @@ var extractBit = function(uri) {
     return null;
   }
 }
-var registerRoute = function() {
+const resolver = function(extracted, callback, raw) {
+  let addr = extracted.address;
+  let u = addr + "/" + extracted.path;
+  // Resolve URI
+  let resolved;
+  if (routes[addr]) {
+    let e = routes[addr]
+    for(let i=0; i<e.length; i++) {
+      let match = e[i].matcher.i.match(u)
+      if (match) {
+        // parse with handlebars
+        resolved = e[i].matcher.o(match)
+        break;
+      }
+    }
+    console.log("Incoming = ", u)
+    console.log("resolved = ", resolved);
+
+    if (resolved) {
+      let st = request(resolved);
+      st.on('response', function(response) {
+        if (raw) {
+          response.headers["Content-Type"] = "text/plain"
+
+        }
+        res_headers = response.headers;
+        const pass = new PassThrough();
+        st.pipe(pass);
+        callback({
+          data: pass,
+          statusCode: response.statusCode,
+          headers: response.headers
+        });
+      })
+    } else {
+      console.log("Not resolved")
+      callback({ statusCode: 404 })
+    }
+  } else {
+    console.log("Not resolved")
+    callback({ statusCode: 404 })
+  }
 }
 var createWindow = function () {
   win = new BrowserWindow({
@@ -173,45 +260,50 @@ var createWindow = function () {
   win.maximize();
 
   win.loadURL(`file:///${dirname}/index.html`);
-
-  const resolver = function(extracted, callback) {
-    let addr = extracted.address.toLowerCase(); // todo: need to support case sensitivity
-    let u = addr + "/" + extracted.path;
-    // Resolve URI
-    let resolved;
-    for(let i=0; i<routes.length; i++) {
-      let match = routes[i].i.match(u)
-      if (match) {
-        // parse with handlebars
-        resolved = routes[i].o(match)
-        break;
+  fs.readFile(router_path, function(err, data) {
+    console.log("read router_path", router_path);
+    if (data) {
+      console.log("found")
+      routeState = JSON.parse(data);
+      console.log("routeState = ", routeState);
+      for(let k in routeState) {
+        for (let path in routeState[k]) {
+          let service = routeState[k][path];
+          for (let service_address in service) {
+            let o = service[service_address];
+            let matcher = {
+              i: new Route(k + path),
+              o: Handlebars.compile(o)
+            }
+            routeMap[k] = {}
+            routeMap[k][service_address] = matcher;
+          }
+        }
       }
+      for(let key in routeMap) {
+        if (!routes[key]) {
+          routes[key] = [];
+        }
+        let endpoints = routeMap[key];
+        for(let j in endpoints) {
+          routes[key].push({
+            endpoint: j,
+            matcher: endpoints[j]
+          })
+        }
+      }
+      console.log("routeMap = ", routeMap);
     }
-    console.log("Incoming = ", u)
-    console.log("resolved = ", resolved);
+  });
 
-    if (resolved) {
-      let st = request(resolved);
-      st.on('response', function(response) {
-        res_headers = response.headers;
-        const pass = new PassThrough();
-        st.pipe(pass);
-        callback({
-          data: pass,
-          statusCode: response.statusCode,
-          headers: response.headers
-        });
-      })
-    }
-  }
   protocol.registerStreamProtocol('bit', function(req, callback) {
-    console.log("Req = ", req)
     let extracted = extractBit(req.url)
     if (extracted) {
       console.log("Extracted = ", extracted);
       resolver(extracted, callback);
     } else {
       console.log("Failed extraction")
+      callback({ statusCode: 404 })
     }
   }, function (error) {
     if (error) {
@@ -235,9 +327,16 @@ var createWindow = function () {
       console.error('Failed to register protocol');
     }
   })
+  protocol.registerStreamProtocol('source', function(req, callback) {
+    const url = req.url.trim().substr(12);
+    console.log("url =", url)
+  })
   protocol.registerStreamProtocol('bottle', function(req, callback) {
-    //const url = req.url.trim().substr(9);
-    const url = extract(req.url) + ".html";
+    let url = extract(req.url);
+    // file extension doesn't exist
+    if (!/\.[A-Za-z0-9]+$/i.test(url)) {
+      url = url + ".html";
+    }
     console.log("bottle", url);
     if (url) {
       console.log("###### url = ", url)
@@ -250,23 +349,28 @@ var createWindow = function () {
         if (type) {
           result.headers = { "Content-type": type };
         }
-        console.log("REsult = ", result);
         callback(result);
-      } else {
-        console.log("Doesn't exist");
+        return;
       }
-    } else {
-      console.log("Doesn't exist");
     }
+    callback({ statusCode: 404 })
   })
   protocol.interceptStreamProtocol('file', function(req, callback) {
     const url = req.url.trim().substr(8);
     if (/^b:\/\//i.test(url)) {
       let path = extract(url)
-      resolver({ address: CONSTANTS.B, path: path }, callback)  
+      if (path) {
+        resolver({ address: CONSTANTS.B, path: path }, callback)  
+      } else {
+        callback({ statusCode: 404 })
+      }
     } else if (/^c:\/\//i.test(url)) {
       let path = extract(url)
-      resolver({ address: CONSTANTS.C, path: path }, callback)  
+      if (path) {
+        resolver({ address: CONSTANTS.C, path: path }, callback)  
+      } else {
+        callback({ statusCode: 404 })
+      }
     } else {
       // regular file
       let parsed;
@@ -292,7 +396,6 @@ var createWindow = function () {
     win = null;
   });
 }
-protocol.registerStandardSchemes(["bit", "b", "c", "file", "bottle"]);
 app.commandLine.appendSwitch('ignore-certificate-errors', 'true');
 app.setAsDefaultProtocolClient("bottle");
 app.setAsDefaultProtocolClient("bit");

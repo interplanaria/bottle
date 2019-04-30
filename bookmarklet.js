@@ -64,7 +64,7 @@ var Bookmarklet = {
   },
   update: function() {
     let current_url = Route.get();
-    let icon = (Bookmarklet.items.map(function(item) { return item.url }).includes(current_url) ? "file:///" + dirname + "/yellowstar.png" : "file:///" + dirname + "/star.png");
+    let icon = (Bookmarklet.items.map(function(item) { return item.url }).includes(current_url) ? "bottle://assets/yellowstar.png" : "bottle://assets/star.png");
     document.querySelector("#nav-bookmark img").setAttribute("src", icon);
   },
   items: []

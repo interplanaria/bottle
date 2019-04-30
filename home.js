@@ -1,9 +1,8 @@
 module.exports = {
   init: function() {
-    var home = Nav.newTab("bottle://drive", {
-    // var home = Nav.newTab("file://" + dirname + "/drive.html", {
+    var home = Nav.newTab("bottle://home", {
       id: "homePage",
-      icon: "file:///" + dirname + "/cap.png",
+      icon: "bottle://assets/cap.png",
       close: false,
       node: true,
       readonlyUrl: true,

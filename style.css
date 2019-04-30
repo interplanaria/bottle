@@ -30,7 +30,29 @@
   height: 25px;
   background: whitesmoke;
 }
-
+#nav-footer {
+  display: flex;
+  font-size: 12px;
+  color: rgba(0,0,0,0.8);
+  font-family: arial;
+  background: rgba(0,0,0,0.07);
+  align-items: center;
+}
+#nav-footer > * {
+  margin: 10px;
+  display: block;
+}
+#nav-footer .btn {
+  text-decoration: none;
+  padding: 3px 10px;
+  background: rgba(0,0,0,0.8);
+  color: white;
+  margin: 0 10px;
+  border-radius: 2px;
+}
+.flexible {
+  flex-grow: 1;
+}
 #nav-body-views {
   flex: 1
 }
@@ -83,7 +105,7 @@
 .nav-tab-item {
   cursor: pointer;
   display: inline-block;
-  padding: 10px;
+  padding: 0 10px;
 }
 .nav-tab-item img {
   width: 25px;
