@@ -101,10 +101,12 @@ button.selected {
 }
 .subtitle {
   padding: 10px;
-  font-size: 16px;
+  font-family: Menlo, monaco, Courier;
+  font-size: 12px;
 }
 .title a {
-  color: white !important;
+  color: burlywood;
+  font-family: Menlo, monaco, Courier;
   font-size: 12px;
   padding: 10px;
   display: block;
@@ -136,7 +138,7 @@ button.selected {
       <div class='subtitle'>bit://{{address}}</div>
       <div>{{description}}</div>
       {{#if url}}
-      <a href='{{url}}'>{{url}}</a>
+      <a target='_blank' href='{{url}}'>{{url}}</a>
       {{/if}}
       {{#if image}}
         <div><img src='{{image}}'></div>
