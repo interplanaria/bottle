@@ -79,6 +79,12 @@ var onkeydown = function(e) {
 module.exports = {
   init: function() {
     document.addEventListener("DOMContentLoaded", function(e) {
+      ipcRenderer.on('route-updated', (event, url) => {
+        console.log("ROUTE UPDATED", url);
+        document.querySelectorAll("webview[src='" + url + "']").forEach(function(el) {
+          el.reload();
+        })
+      });
       ipcRenderer.on('open-tab', (event, url) => {
         if (!/^bottle:.+/.test(url)) {
           let tab = Nav.newTab(url, { icon: "bottle://assets/cap.png" })
@@ -88,7 +94,7 @@ module.exports = {
         let url = document.querySelector("#nav-ctrls-url").value;
         console.log("url = ", url);
         if (/^bit:.+/.test(url)) {
-          let html = "<div><i class='fas fa-exclamation-circle'></i> Connection required</div><div class='flexible'></div><a href='bottle://bitcom?address=" + address + "' target='_blank' class='btn'>Connect to " + address + "</a>";;
+          let html = "<div><i class='fas fa-exclamation-circle'></i> Connection required</div><div class='flexible'></div><a href='bottle://bitcom?redirect=" + url +"&address=" + address + "' target='_blank' class='btn'>Connect to " + address + "</a>";;
           document.querySelector("#nav-footer .sub").innerHTML = html;
         }
       });
