@@ -11,6 +11,7 @@ const mime = require('mime-types');
 const Route = require('route-parser');
 const Handlebars = require('handlebars');
 const CONSTANTS = require('./constants');
+const DEFAULTS = require('./defaults.json');
 const router_path = path.join(userPath, '.', 'router.json');
 
 var res_headers;
@@ -25,7 +26,10 @@ global.router = {
   get: function(address) {
     return routeState[address];
   },
-  add: function(r) {
+  add: function(r, redirect) {
+    // if existing route, remove
+    // if non existing route, add.
+
     routes = {};
     /**
     *
@@ -77,8 +81,8 @@ global.router = {
           if (!routeState[k]) {
             routeState[k] = {};
           }
-          if (routeState[k][path]) {
-            delete routeState[k][path];
+          if (routeState[k][path] && routeState[k][path][service_address]) {
+            delete routeState[k][path][service_address];
             delete routeMap[k][service_address];
           } else {
             routeState[k][path] = {}
@@ -92,8 +96,6 @@ global.router = {
           }
         }
       })
-      console.log("routeState = ", routeState);
-      console.log("routeMap = ", routeMap);
     })
     /*
     *
@@ -138,16 +140,15 @@ global.router = {
     * })
     *
     */
-    console.log("ROUTE Map = ", routeMap)
-    console.log("ROUTER = ", routes)
     fs.writeFile(router_path, JSON.stringify(routeState, null, 2), function(err, data) {
-      console.log("Saved routeState", routeState);
+      if (redirect) {
+        win.webContents.send("route-updated", redirect);
+      }
     });
   }
 }
 var extract = function(uri) {
   let m = /^(b|c|bottle):\/\/([^?#]+)/i.exec(uri)
-  console.log("m = ", m);
   if (m && m.length === 3) {
     let matched = m[2];
     if (matched[matched.length-1] === '/') {
@@ -160,7 +161,6 @@ var extract = function(uri) {
   }
 }
 var extractBit = function(uri) {
-  console.log("Trying to extract", uri);
   let m = /^bit:[\/]+([^\/]+)\/([^?#]+)/i.exec(uri)
   if (m && m.length >= 3) {
     let a = m[1];
@@ -234,48 +234,52 @@ var createWindow = function () {
 
   win.loadURL(`file:///${dirname}/index.html`);
   fs.readFile(router_path, function(err, data) {
-    console.log("read router_path", router_path);
     if (data) {
-      console.log("found")
-      routeState = JSON.parse(data);
-      console.log("routeState = ", routeState);
-      for(let k in routeState) {
-        for (let path in routeState[k]) {
-          let service = routeState[k][path];
-          for (let service_address in service) {
-            let o = service[service_address];
-            let matcher = {
-              i: new Route(k + path),
-              o: Handlebars.compile(o)
-            }
-            routeMap[k] = {}
-            routeMap[k][service_address] = matcher;
+      try {
+        routeState = JSON.parse(data);
+      } catch (e) {
+        console.log("error = ", e);
+      }
+    }
+    if (!routeState || !routeState[CONSTANTS.B]) {
+      routeState[CONSTANTS.B] = DEFAULTS[CONSTANTS.B];
+    }
+    if (!routeState || !routeState[CONSTANTS.C]) {
+      routeState[CONSTANTS.C] = DEFAULTS[CONSTANTS.C];
+    }
+    for(let k in routeState) {
+      for (let path in routeState[k]) {
+        let service = routeState[k][path];
+        for (let service_address in service) {
+          let o = service[service_address];
+          let matcher = {
+            i: new Route(k + path),
+            o: Handlebars.compile(o)
           }
+          routeMap[k] = {}
+          routeMap[k][service_address] = matcher;
         }
       }
-      for(let key in routeMap) {
-        if (!routes[key]) {
-          routes[key] = [];
-        }
-        let endpoints = routeMap[key];
-        for(let j in endpoints) {
-          routes[key].push({
-            endpoint: j,
-            matcher: endpoints[j]
-          })
-        }
+    }
+    for(let key in routeMap) {
+      if (!routes[key]) {
+        routes[key] = [];
       }
-      console.log("routeMap = ", routeMap);
+      let endpoints = routeMap[key];
+      for(let j in endpoints) {
+        routes[key].push({
+          endpoint: j,
+          matcher: endpoints[j]
+        })
+      }
     }
   });
 
   protocol.registerStreamProtocol('bit', function(req, callback) {
     let extracted = extractBit(req.url)
     if (extracted) {
-      console.log("Extracted = ", extracted);
       resolver(extracted, callback);
     } else {
-      console.log("Failed extraction")
       callback({ statusCode: 404 })
     }
   }, function (error) {
@@ -300,21 +304,14 @@ var createWindow = function () {
       console.error('Failed to register protocol');
     }
   })
-  protocol.registerStreamProtocol('source', function(req, callback) {
-    const url = req.url.trim().substr(12);
-    console.log("url =", url)
-  })
   protocol.registerStreamProtocol('bottle', function(req, callback) {
     let url = extract(req.url);
     // file extension doesn't exist
     if (!/\.[A-Za-z0-9]+$/i.test(url)) {
       url = url + ".html";
     }
-    console.log("bottle", url);
     if (url) {
-      console.log("###### url = ", url)
       let stubPath = path.join(dirname, '.', url);
-      console.log("###### resolved = ", stubPath)
       let exists = fs.existsSync(stubPath);
       if (exists) {
         let result = { data: fs.createReadStream(stubPath) }

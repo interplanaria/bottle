@@ -227,9 +227,7 @@ const route = {
         }
       }, function(res) {
         let r = [].concat(res.u).concat(res.c)
-        console.log("r = ", r)
         r.forEach(function(item) {
-          console.log("enable item.out = ", item.out, address)
           if (item.out[0].s2 === 'route' && item.out[0].s3 === 'enable') {
             let routePath = item.out[0].s4;
             if (!bitcom[address]) {
@@ -240,7 +238,6 @@ const route = {
             }
           } else if ((item.out[0].s2 === 'echo' || item.out[0].s2 === 'cat') && (item.out[0].s4 === 'to' || item.out[0].s4 === '>') && item.out[0].s5) {
             let filename = item.out[0].s5
-            console.log(filename, "Meta = ", JSON.stringify(meta, null, 2));
             if (!meta[filename]) {
               if (filename === 'name') {
                 meta[filename] = item.out[0].s3;
@@ -277,7 +274,6 @@ const route = {
       }, function(res) {
         let r = [].concat(res.u).concat(res.c)
         r.reverse().forEach(function(item) {
-          console.log("add item.out = ", item.out, address)
           let routePath = item.out[0].s5;
           let endpoint = item.out[0].s6;
           if (bitcom[address] && bitcom[address][routePath]) {
@@ -290,22 +286,17 @@ const route = {
   }
 }
 const add = function(address, path) {
-  console.log("add", address, path)
   let router = remote.getGlobal("router")
-  console.log("Bitcom = ", JSON.stringify(bitcom, null, 2));
   let bc = {};
   bc[meta.address] = {}
   bc[meta.address][path] = {}
   bc[meta.address][path][address] = bitcom[meta.address][path][address];
-  console.log("BC = ", bc)
-  router.add(bc)
+  router.add(bc, redirect)
 }
 const render = function() {
   let items = [];
   Object.keys(bitcom).forEach(function(key) {
     let routes = bitcom[key];
-    console.log("routes = ", JSON.stringify(routes,null,2));
-    console.log("state = ", state);
     Object.keys(routes).forEach(function(routeKey) {
       let routeMapping = routes[routeKey];
       let i = [];
@@ -325,7 +316,6 @@ const render = function() {
         routes: i
       })
     })
-    console.log("items = ", items)
   })
   let str = templates.item({
     name: (meta.name ? meta.name : meta.address),
@@ -335,23 +325,18 @@ const render = function() {
     items: items,
     image: (meta.image ? meta.image : null)
   })
-  console.log("logs = ", logs)
   document.querySelector(".slot").innerHTML = str;
 }
+var params = (new URL(document.location)).searchParams;
+var address = params.get("address");
+var redirect = params.get("redirect");
 document.addEventListener("DOMContentLoaded", async function(e) {
-  console.log("Load")
-  let params = (new URL(document.location)).searchParams;
-  let address = params.get("address");
   meta.address = address
   let router = remote.getGlobal("router")
   state = router.get(address)
-  console.log("State = ", state);
-  console.log("address = ", address)
-  console.log("Meta = ", JSON.stringify(meta, null, 2));
   await route.enable(address)
   await route.add(address)
   render();
-
   document.querySelectorAll("button").forEach(function(el) {
     el.addEventListener("click", function(ev) {
       add(el.dataset.address, el.dataset.path)
