@@ -34,14 +34,18 @@ var onkeydown = function(e) {
   }
   // New tab => Ctrl+T
   if (ctrlPressed && Util.fromKeyCode(evt.keyCode) == 'T' || metaPressed && Util.fromKeyCode(evt.keyCode) == 'T') {
+    document.querySelector("#nav-ctrls-url").blur();
     let tab = Nav.newTab("about:blank", {
-      icon: "file:///" + dirname + "/cap.png",
+      icon: "bottle://assets/cap.png",
       webviewAttributes: {
         plugins: "", preload: dirname + "/preload.js"
       },
     })
     tab.setAttribute('plugins', '');
     e.preventDefault();
+    setTimeout(function() {
+      document.querySelector("#nav-ctrls-url").focus();
+    }, 100)
     return false;
   }
   if (ctrlPressed && Util.fromKeyCode(evt.keyCode) == 'R' || metaPressed && Util.fromKeyCode(evt.keyCode) == 'R') {
@@ -78,8 +82,24 @@ var onkeydown = function(e) {
 module.exports = {
   init: function() {
     document.addEventListener("DOMContentLoaded", function(e) {
-      ipcRenderer.on('open-url', (event, url) => {
-        let tab = Nav.newTab(url, { icon: "file:///" + dirname + "/cap.png" })
+      ipcRenderer.on('route-updated', (event, url) => {
+        console.log("ROUTE UPDATED", url);
+        document.querySelectorAll("webview[src='" + url + "']").forEach(function(el) {
+          el.reload();
+        })
+      });
+      ipcRenderer.on('open-tab', (event, url) => {
+        if (!/^bottle:.+/.test(url)) {
+          let tab = Nav.newTab(url, { icon: "bottle://assets/cap.png" })
+        }
+      });
+      ipcRenderer.on('resolve-error', (event, address) => {
+        let url = document.querySelector("#nav-ctrls-url").value;
+        console.log("url = ", url);
+        if (/^bit:.+/.test(url)) {
+          let html = "<div><i class='fas fa-exclamation-circle'></i> Connection required</div><div class='flexible'></div><a href='bottle://bitcom?redirect=" + url +"&address=" + address + "' target='_blank' class='btn'>Connect to " + address + "</a>";;
+          document.querySelector("#nav-footer .sub").innerHTML = html;
+        }
       });
       document.querySelector("#nav-body-shortcuts").addEventListener("dragleave", function(ev) {
         ev.preventDefault();
@@ -92,7 +112,7 @@ module.exports = {
       document.querySelector("#nav-body-shortcuts").addEventListener("click", function(e) {
         if (e.target.className === 'shortcut') {
           let url = e.target.dataset.url;
-          if (/^(https?:|b:|c:).*/i.test(url)) {
+          if (/^(https?:|b:|c:|bit:|bottle:).*/i.test(url)) {
             document.querySelector("webview.nav-views-view.active").executeJavaScript("location.href='" + url + "'")
           } else if (/^javascript:/.test(url)) {
             let js = url.replace(/javascript:/, "");

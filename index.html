@@ -3,12 +3,17 @@
 <head>
 <meta charset="UTF-8" />
 <link href="./style.css" rel='stylesheet'>
+<link href="bottle://fa/css/all.css" rel="stylesheet">
 </head>
 <body>
 <div id="nav-body-ctrls"></div>
 <div id="nav-body-shortcuts"></div>
 <div id="nav-body-tabs"></div>
 <div id="nav-body-views"></div>
+<div id="nav-footer">
+  <div class='main'></div>
+  <div class='sub'></div>
+</div>
 <script>
 const fs = require('fs');
 const path = require('path');
@@ -23,12 +28,10 @@ const Util = require('./util');
 const Nav = require('./nav');
 const Route = require('./route');
 const Events = require('./events');
-const Settings = require('./settings');
 const Bookmarklet = require('./bookmarklet');
 const URIScheme = require('./urischeme');
 URIScheme.init();
 Menu.init();
-Settings.init();
 Home.init();
 Events.init();
 </script>

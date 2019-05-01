@@ -1,0 +1,370 @@
+<html>
+<head>
+<style>
+body {
+  font-family: Arial;
+  font-size: 12px;
+  /*
+  background: rgba(0,0,0,0.9);
+  color: white;
+  */
+}
+.container {
+  margin: 0 auto;
+  max-width: 800px;
+  padding: 50px;
+}
+.container input {
+  padding: 8px;
+  font-size: 14px;
+  width: 100%;
+}
+.row label {
+  padding: 5px 2px;
+  display: block;
+  font-size: 12px;
+}
+.row {
+  padding: 20px 0;
+  display: flex;
+}
+.row .col.img {
+  width: 200px; 
+  margin-left: 10px;
+}
+.row .col.img img {
+  width: 100%;
+}
+pre {
+  background: rgba(0,0,0,0.8);
+  color: white;
+  padding: 5px;
+}
+h1 {
+  font-size: 50px;
+  margin: 0;
+  max-width: 800px;
+  word-wrap: break-word;
+}
+h2 {
+  font-size: 30px;
+  margin: 0;
+}
+.center {
+  text-align: center;
+}
+h3 {
+  margin: 5px 0;
+}
+button:hover {
+  cursor: pointer;
+  opacity: 0.8;
+}
+button:focus, input:focus {
+  outline: none;
+  opacity: 0.8;
+}
+button.selected {
+  background: silver;
+}
+.flexible {
+  flex-grow: 1;
+}
+.endpoints_header {
+  padding: 20px 0;
+}
+.endpoint {
+  display: flex;
+  padding: 10px 0;
+  font-family: Menlo, monaco, monospace;
+  font-size: 12px;
+  border-top: 1px solid rgba(0,0,0,0.07);
+}
+.endpoint button {
+  width: 100px;
+  padding: 5px;
+  /*
+  background: #84BF04;
+  color: white;
+  */
+  background: burlywood;
+  border: 1px solid rgba(0,0,0,0.2);
+  color: rgba(0,0,0,0.8);
+  font-size: 12px;
+  border-radius: 2px;
+}
+.endpoint button.connected {
+  background: silver;
+}
+.title {
+  padding-bottom: 50px;
+}
+.subtitle {
+  padding: 10px;
+  font-family: Menlo, monaco, Courier;
+  font-size: 12px;
+}
+.title a {
+  color: burlywood;
+  font-family: Menlo, monaco, Courier;
+  font-size: 12px;
+  padding: 10px;
+  display: block;
+}
+.title img {
+  max-width: 500px;
+  margin: 20px;
+}
+
+</style>
+<link href="bottle://fa/css/all.css" rel="stylesheet">
+<script id="logs-template" type="text/x-handlebars-template">
+<div class='row'>
+  <div class='col flexible'>
+    <div class='endpoints_header'>
+      <div>Events</div>
+    </div>
+    {{#each items}}
+      {{content}}
+    {{/each}}
+  </div>
+</div>
+</script>
+<script id="item-template" type="text/x-handlebars-template">
+<div class='row'>
+  <div class='col flexible'>
+    <div class='center title'>
+      <h1>{{name}}</h1>
+      <div class='subtitle'>bit://{{address}}</div>
+      <div>{{description}}</div>
+      {{#if url}}
+      <a target='_blank' href='{{url}}'>{{url}}</a>
+      {{/if}}
+      {{#if image}}
+        <div><img src='{{image}}'></div>
+      {{/if}}
+    </div>
+    <div class='endpoints_header'>
+      <h2>endpoints</h2>
+      <div>Select an endpoint to connect to</div>
+    </div>
+    {{#each items}}
+      <pre>bit://{{address}}{{path}}</pre>
+      {{#each routes}}
+      <div class='endpoint'>
+        <div class='url'>{{val}}</div>
+        <div class='flexible'></div>
+        {{#if connected}}
+          <button class='connected' data-address='{{key}}' data-path='{{path}}'>Connected</button>
+        {{else}}
+          <button data-address='{{key}}' data-path='{{path}}'>Connect</button>
+        {{/if}}
+      </div>
+      {{/each}}
+    {{/each}}
+  </div>
+</div>
+</script>
+<script>
+const fs = require('fs');
+const path = require('path');
+const Handlebars = require('handlebars');
+const {remote, ipcRenderer} = require('electron');
+const dirname = remote.app.getAppPath();
+const userPath = remote.app.getPath("userData");
+const templates = {
+  item: Handlebars.compile(document.querySelector("#item-template").innerHTML),
+  log: Handlebars.compile(document.querySelector("#logs-template").innerHTML)
+}
+const get = function(query, cb) {
+  var b64 = btoa(JSON.stringify(query));
+  var url = "https://babel.bitdb.network/q/1DHDifPvtPgKFPZMRSxmVHhiPvFmxZwbfh/" + b64;
+  var header = { headers: { key: "1KJPjd3p8khnWZTkjhDYnywLB2yE1w5BmU" } };
+    fetch(url, header).then(function(r) {
+    return r.json()
+  }).then(function(r) {
+    cb(r)
+  })
+}
+var bitcom = {}
+var meta = {}
+var logs = [];
+var state;
+const log = function(address) {
+  return new Promise(function(resolve, reject) {
+    get({
+      v: 3,
+      q: {
+        find: {
+          "out.b0": { "op": 106 },
+          "out.s1": address,
+        },
+        limit: 100
+      },
+      r: {
+        f: "[.[] | { sender: .in[0].e.a, out: .out }]"
+      }
+    }, function(res) {
+      logs = [].concat(res.u).concat(res.c)
+      resolve()
+    })
+  })
+}
+const route = {
+  enable: function(address) {
+    return new Promise(function(resolve, reject) {
+      get({
+        v: 3,
+        q: {
+          find: {
+            "out.b0": { "op": 106 },
+            "out.s1": "$",
+            "in.e.a": address
+          }
+        },
+        r: {
+          f: "[.[] | { sender: .in[0].e.a, out: .out }]"
+        }
+      }, function(res) {
+        let r = [].concat(res.u).concat(res.c)
+        r.forEach(function(item) {
+          if (item.out[0].s2 === 'route' && item.out[0].s3 === 'enable') {
+            let routePath = item.out[0].s4;
+            if (!bitcom[address]) {
+              bitcom[address] = {}
+            }
+            if (!bitcom[address][routePath]) {
+              bitcom[address][routePath] = {}
+            }
+          } else if ((item.out[0].s2 === 'echo' || item.out[0].s2 === 'cat') && (item.out[0].s4 === 'to' || item.out[0].s4 === '>') && item.out[0].s5) {
+            let filename = item.out[0].s5
+            if (!meta[filename]) {
+              if (filename === 'name') {
+                meta[filename] = item.out[0].s3;
+              } else if (filename === 'description') {
+                meta[filename] = item.out[0].s3;
+              } else if (filename === 'url') {
+                meta[filename] = item.out[0].s3;
+              } else if (filename === 'image') {
+                meta[filename] = item.out[0].s3;
+              }
+            }
+          }
+        })
+        resolve();
+      })
+    })
+  },
+  add: function(address) {
+    return new Promise(function(resolve, reject) {
+      get({
+        v: 3,
+        q: {
+          find: {
+            "out.b0": { "op": 106 },
+            "out.s1": "$",
+            "out.s2": "route",
+            "out.s3": "add",
+            "out.s4": address
+          }
+        },
+        r: {
+          f: "[.[] | { sender: .in[0].e.a, out: .out }]"
+        }
+      }, function(res) {
+        let r = [].concat(res.u).concat(res.c)
+        r.reverse().forEach(function(item) {
+          let routePath = item.out[0].s5;
+          let endpoint = item.out[0].s6;
+          if (bitcom[address] && bitcom[address][routePath]) {
+            bitcom[address][routePath][item.sender] = endpoint;
+          }
+        })
+        resolve();
+      })
+    })
+  }
+}
+const add = function(address, path) {
+  let router = remote.getGlobal("router")
+  let bc = {};
+  bc[meta.address] = {}
+  bc[meta.address][path] = {}
+  bc[meta.address][path][address] = bitcom[meta.address][path][address];
+  router.add(bc, redirect)
+}
+const render = function() {
+  let items = [];
+  Object.keys(bitcom).forEach(function(key) {
+    let routes = bitcom[key];
+    Object.keys(routes).forEach(function(routeKey) {
+      let routeMapping = routes[routeKey];
+      let i = [];
+      Object.keys(routeMapping).forEach(function(routeAddress) {
+        let routeEndpoint = routeMapping[routeAddress];
+        let connected = (state && state[routeKey] && state[routeKey][routeAddress] ? true : false);
+        i.push({
+          path: routeKey,
+          connected: connected,
+          key: routeAddress,
+          val: routeEndpoint
+        })
+      })
+      items.push({
+        address: meta.address,
+        path: routeKey,
+        routes: i
+      })
+    })
+  })
+  let str = templates.item({
+    name: (meta.name ? meta.name : meta.address),
+    address: meta.address,
+    description: (meta.description ? meta.description : ""),
+    url: (meta.url ? meta.url : null),
+    items: items,
+    image: (meta.image ? meta.image : null)
+  })
+  document.querySelector(".slot").innerHTML = str;
+}
+var params = (new URL(document.location)).searchParams;
+var address = params.get("address");
+var redirect = params.get("redirect");
+document.addEventListener("DOMContentLoaded", async function(e) {
+  meta.address = address
+  let router = remote.getGlobal("router")
+  state = router.get(address)
+  await route.enable(address)
+  await route.add(address)
+  render();
+  document.querySelectorAll("button").forEach(function(el) {
+    el.addEventListener("click", function(ev) {
+      add(el.dataset.address, el.dataset.path)
+
+      document.querySelectorAll("button").forEach(function(el2) {
+        if (el !== el2) {
+          el2.classList.remove("connected")
+          el2.innerHTML = "Connect";
+        }
+      })
+      el.classList.toggle("connected");
+      if (el.classList.contains("connected")) {
+        el.innerHTML = "Connected";
+      } else {
+        el.innerHTML = "Connect";
+      }
+      ev.preventDefault();
+    })
+  })
+});
+</script>
+</head>
+<body>
+<div class='container'>
+<div class='slot'>
+</div>
+<div class='logs'>
+</div>
+</div>
+</body>
+</html>

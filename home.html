@@ -1,0 +1,164 @@
+<html>
+<head>
+<style>
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow: auto;
+}
+.hidden {
+  display: none !important;
+}
+body {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  font-family: arial;
+  font-size: 14px;
+  color: rgba(0,0,0,0.8);
+  overflow: auto;
+}
+header {
+  padding: 5px;
+  background: whitesmoke;
+}
+input[type=text] {
+  padding: 8px;
+  margin: 10px 5px 0;
+  box-sizing: border-box;
+  flex-grow: 1;
+  border: 1px solid rgba(0,0,0,0.2);
+}
+input[type=text]:focus {
+  outline: none;
+}
+.content {
+  overflow: auto;
+  flex-grow: 1;
+  display: flex;
+}
+#sidebar {
+  box-sizing: border-box;
+  width: 200px;
+  flex-shrink: 0;
+  border-right: 2px solid whitesmoke;
+  overflow: auto;
+}
+#sidebar .container {
+  margin-top: 10px;
+}
+#sidebar form {
+  flex-grow: 1;
+}
+#sidebar i {
+  width: 20px;
+  text-align: center;
+}
+#detail {
+  flex-grow: 1;
+  flex-shrink: 0;
+  /*
+  max-width: 300px;
+  */
+  box-sizing: border-box;
+  overflow: auto;
+  border-right: 2px solid whitesmoke;
+}
+#detail:empty {
+  border: none;
+}
+#detail .item {
+  font-size: 12px;
+}
+#detail input[type=text] {
+  width: 500px;
+  box-sizing: border-box;
+}
+#frame {
+  flex-grow: 1;
+  border: none;
+}
+.item {
+  display: block;
+  color: rgba(0,0,0,0.8);
+  text-decoration: none;
+  padding: 10px;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+}
+.item[data-state=unconfirmed] {
+  opacity: 0.5;
+}
+.item .button {
+  display: inline-block;
+  margin: 5px 5px 0 0;
+  padding: 2px 10px;
+  background: rgba(0,0,0,0.8);
+  text-decoration: none;
+  color: white;
+}
+.item .name {
+  font-weight: bold;
+  font-size:12px;
+  line-height:20px;
+}
+.item .meta {
+  color: rgba(0,0,0,0.8);
+}
+#bookmark, #write, #home {
+  padding: 10px 5px;
+  display: block;
+  font-size: 14px;
+  line-height: 18px;
+  text-decoration: none;
+  cursor: pointer;
+  background: rgba(0,0,0,0.04);
+  color: rgba(0,0,0,0.8);
+}
+#bookmark img , #write img, #home img{
+  height: 14px;
+  vertical-align: text-bottom;
+  margin-right: 5px;
+  display: inline-block;
+}
+.row {
+  display: flex;
+  cursor: pointer;
+  padding: 5px;
+}
+.row.selected {
+  background: rgba(0,0,0,0.1);
+}
+.row .name {
+  display: block;
+}
+.row .flexible {
+  flex-grow: 1;
+}
+h1 {
+  margin: 0;
+  padding: 10px;
+}
+a.block.link {
+  color: rgba(0,0,0,0.4);
+  padding: 2px 0;
+  display: block;
+}
+.loading {
+  padding: 10px;
+  text-align: center;
+  font-family: arial;
+  font-size: 12px;
+  color: rgba(0,0,0,0.8);
+}
+</style>
+<link href="bottle://fa/css/all.css" rel="stylesheet">
+<script>
+document.addEventListener("DOMContentLoaded", function(e) {
+  document.querySelector("#frame").setAttribute("src", "https://bottle.bitdb.network/0.0.4/index.html?" + Date.now());
+})
+</script>
+</head>
+<body>
+<iframe name='frame' id='frame'></iframe>
+</body>
+</html>
