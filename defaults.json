@@ -1,0 +1,12 @@
+{
+  "19HxigV4QyBv3tHpQVcUEQyq1pzZVdoAut": {
+    "/:tx": { 
+      "1KBZ3jGAzqRH2VjVkjrgBxjrpiQCQXFzwP": "https://data.bitdb.network/1KuUr2pSJDao97XM8Jsq8zwLS6W1WtFfLg/b/{{tx}}"
+    }
+  },
+  "1KCm9cgDdT7r88WRQmm6gynFNmTrskdygn": {
+    "/:hash": {
+      "1KBZ3jGAzqRH2VjVkjrgBxjrpiQCQXFzwP": "https://data.bitdb.network/1KuUr2pSJDao97XM8Jsq8zwLS6W1WtFfLg/c/{{hash}}"
+    }
+  }
+}
