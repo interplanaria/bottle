@@ -43,6 +43,9 @@ var onkeydown = function(e) {
     })
     tab.setAttribute('plugins', '');
     e.preventDefault();
+    setTimeout(function() {
+      document.querySelector("#nav-ctrls-url").focus();
+    }, 100)
     return false;
   }
   if (ctrlPressed && Util.fromKeyCode(evt.keyCode) == 'R' || metaPressed && Util.fromKeyCode(evt.keyCode) == 'R') {
