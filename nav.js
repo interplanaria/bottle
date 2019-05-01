@@ -1,6 +1,7 @@
 const Route = require('./route');
 const Util = require('./util');
 const Bookmarklet = require('./bookmarklet');
+const CONSTANTS = require('./constants');
 const handleNav = function() {
   let current_url = Route.get();
   let src = document.querySelector("#nav-source");
@@ -16,12 +17,10 @@ const handleNav = function() {
     if (bookmark) bookmark.classList.remove("hidden");
   }
 }
-const router = remote.getGlobal("router")
 
 // Create Nav
 const enav = new (require('electron-navigation'))({
   newTabCallback: function(url, options) {
-    console.log("URL = ", url)
     let newOptions = options;
     let newUrl = url;
     newOptions.icon = "bottle://assets/cap.png";
@@ -60,13 +59,11 @@ enav._addEvents = function (sessionID, options) {
     if (res.errorCode != -3) {
       let m = /bit:\/\/([^\/]+)\/.*/i.exec(res.validatedURL)
       if (m && m.length > 0) {
-        console.log(m)
         let style = "var style = document.body.style; style.padding='100px'; style.textAlign='center'; style.margin=0; style.background='rgba(0,0,0,0.9)'; style.color='white'; style.fontFamily='Menlo,monaco,monospace'; style.fontSize='11px';"
         let s = style + " document.body.innerHTML='<div>" +
           "<div>The protocol is not yet connected. Please connect with an endpoint</div>" +
-          "<a style=\"margin: 20px; background: burlywood; padding: 10px; border-radius: 2px; text-decoration: none; display: inline-block; padding: 10px; color: rgba(0,0,0,0.8); border: 1px solid rgba(0,0,0,0.3); \" target=\"_blank\" href=\"bottle://bitcom?address=" + m[1] + "\">Connect to " + m[1] + "</a>" +
+          "<a style=\"margin: 20px; background: burlywood; padding: 10px; border-radius: 2px; text-decoration: none; display: inline-block; padding: 10px; color: rgba(0,0,0,0.8); border: 1px solid rgba(0,0,0,0.3); \" target=\"_blank\" href=\"bottle://bitcom?redirect=" + res.validatedURL + "&address=" + m[1] + "\">Connect to " + m[1] + "</a>" +
           "</div>';";
-        console.log("s = ", s)
         wv.executeJavaScript(s);
       }
     }
@@ -79,18 +76,25 @@ enav._updateUrl = function(url) {
   let current_url = Route.get();
   document.querySelector("#nav-footer .sub").innerHTML = "";
   if (url === current_url) {
-    console.log("current_url = ", current_url);
-    console.log("updateURL = ", url);
     updateUrl(url);
     let m = /bit:\/\/([^\/]+)\/.*/i.exec(url);
     if (m && m.length > 0) {
+      const router = remote.getGlobal("router")
       let connection = router.get(m[1]);
       if (connection && Object.keys(connection).length > 0) {
         let _path = Object.keys(connection)[0];
         let _endpoint = connection[_path];
-        let _addr = Object.keys(_endpoint)[0];
-        let _api = Object.values(_endpoint)[0];
-        let html = "<div><i class='fas fa-plug'></i> " + _path + " <i class='fas fa-angle-double-right'></i> " + _api + "</div><div class='flexible'></div><a href='bottle://bitcom?address=" + m[1] + "' target='_blank' class='btn'>Settings</a>";;
+        if (_endpoint) {
+          let _addr = Object.keys(_endpoint)[0];
+          let _api = Object.values(_endpoint)[0];
+          let html = "<div><i class='fas fa-plug'></i> " + _path + " <i class='fas fa-angle-double-right'></i> " + _api + "</div><a href='bottle://bitcom?redirect=" + url + "&address=" + m[1] + "' target='_blank' class='btn'>Switch Endpoint</a>";
+          document.querySelector("#nav-footer .main").innerHTML = html;
+        } else {
+          let html = "<div><i class='fas fa-plug'></i> " + _path + "</div><a href='bottle://bitcom?redirect=" + url + "&address=" + m[1] + "' target='_blank' class='btn'>Switch Endpoint</a>";
+          document.querySelector("#nav-footer .main").innerHTML = html;
+        }
+      } else {
+        let html = "<div><i class='fas fa-plug'></i> " + _path + "</div><a href='bottle://bitcom?redirect=" + url + "&address=" + m[1] + "' target='_blank' class='btn'>Switch Endpoint</a>";
         document.querySelector("#nav-footer .main").innerHTML = html;
       }
     } else {
@@ -104,8 +108,23 @@ enav._updateUrl = function(url) {
 *  Override Nav Methods
 *
 ***********************************************************************/
+var pu = enav._purifyUrl;
 enav._purifyUrl = function(str) {
-  return str.trim();
+  let p = str.trim();
+  let r = /^(bit|b|c):\/\/([^\/]+)/i.exec(p);
+  if (r && r.length > 0) {
+    if (r[1].toLowerCase() === 'b') {
+      return "bit://" + CONSTANTS.B + "/" + r[2];
+    } else if (r[1].toLowerCase() === 'c') {
+      return "bit://" + CONSTANTS.C + "/" + r[2];
+    } else {
+      return p;
+    }
+  } else if (p === 'about:blank') {
+    return p;
+  } else {
+    return pu(str);
+  }
 }
 
 /***********************************************************************
@@ -147,5 +166,6 @@ button({
 Bookmarklet.get().then(function(items) {
   Bookmarklet.render(items);
 });
+
 
 module.exports = enav;
