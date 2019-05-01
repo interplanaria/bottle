@@ -71,35 +71,44 @@ enav._addEvents = function (sessionID, options) {
   return wv;
 }
 
+// Block iframe from changing URL
+window.addEventListener("did-navigate-in-page", function (event) {
+  if (!event.isMainFrame) {
+    event.stopPropagation();
+  }
+}, true);
+
 var updateUrl = enav._updateUrl;
 enav._updateUrl = function(url) {
-  let current_url = Route.get();
   document.querySelector("#nav-footer .sub").innerHTML = "";
-  if (url === current_url) {
-    updateUrl(url);
-    let m = /bit:\/\/([^\/]+)\/.*/i.exec(url);
-    if (m && m.length > 0) {
-      const router = remote.getGlobal("router")
-      let connection = router.get(m[1]);
-      if (connection && Object.keys(connection).length > 0) {
-        let _path = Object.keys(connection)[0];
-        let _endpoint = connection[_path];
-        if (_endpoint) {
-          let _addr = Object.keys(_endpoint)[0];
-          let _api = Object.values(_endpoint)[0];
-          let html = "<div><i class='fas fa-plug'></i> " + _path + " <i class='fas fa-angle-double-right'></i> " + _api + "</div><a href='bottle://bitcom?redirect=" + url + "&address=" + m[1] + "' target='_blank' class='btn'>Switch Endpoint</a>";
-          document.querySelector("#nav-footer .main").innerHTML = html;
-        } else {
-          let html = "<div><i class='fas fa-plug'></i> " + _path + "</div><a href='bottle://bitcom?redirect=" + url + "&address=" + m[1] + "' target='_blank' class='btn'>Switch Endpoint</a>";
-          document.querySelector("#nav-footer .main").innerHTML = html;
-        }
+  let current_view = document.querySelector("webview.active");
+  updateUrl(url);
+  Route.set(url);
+  let m = /bit:\/\/([^\/]+)\/.*/i.exec(url);
+  if (m && m.length > 0) {
+    const router = remote.getGlobal("router")
+    let connection = router.get(m[1]);
+    if (connection && Object.keys(connection).length > 0) {
+      let _path = Object.keys(connection)[0];
+      let _endpoint = connection[_path];
+      if (_endpoint) {
+        let _addr = Object.keys(_endpoint)[0];
+        let _api = Object.values(_endpoint)[0];
+        let html = "<div><i class='fas fa-plug'></i> " + _path + " <i class='fas fa-angle-double-right'></i> " + _api + "</div><a href='bottle://bitcom?redirect=" + url + "&address=" + m[1] + "' target='_blank' class='btn'>Switch Endpoint</a>";
+        document.querySelector("#nav-footer .main").innerHTML = html;
       } else {
         let html = "<div><i class='fas fa-plug'></i> " + _path + "</div><a href='bottle://bitcom?redirect=" + url + "&address=" + m[1] + "' target='_blank' class='btn'>Switch Endpoint</a>";
         document.querySelector("#nav-footer .main").innerHTML = html;
       }
     } else {
-      document.querySelector("#nav-footer .main").innerHTML = "";
+      let html = "<div><i class='fas fa-plug'></i> " + _path + "</div><a href='bottle://bitcom?redirect=" + url + "&address=" + m[1] + "' target='_blank' class='btn'>Switch Endpoint</a>";
+      document.querySelector("#nav-footer .main").innerHTML = html;
     }
+  } else {
+    document.querySelector("#nav-footer .main").innerHTML = "";
+  }
+  if (Bookmarklet) {
+    Bookmarklet.update();
   }
 }
 
@@ -112,19 +121,21 @@ var pu = enav._purifyUrl;
 enav._purifyUrl = function(str) {
   let p = str.trim();
   let r = /^(bit|b|c):\/\/([^\/]+)/i.exec(p);
+  let res;
   if (r && r.length > 0) {
     if (r[1].toLowerCase() === 'b') {
-      return "bit://" + CONSTANTS.B + "/" + r[2];
+      res = "bit://" + CONSTANTS.B + "/" + r[2];
     } else if (r[1].toLowerCase() === 'c') {
-      return "bit://" + CONSTANTS.C + "/" + r[2];
+      res = "bit://" + CONSTANTS.C + "/" + r[2];
     } else {
-      return p;
+      res = p;
     }
   } else if (p === 'about:blank') {
-    return p;
+    res = p;
   } else {
-    return pu(str);
+    res = pu(str);
   }
+  return res;
 }
 
 /***********************************************************************
