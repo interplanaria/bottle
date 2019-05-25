@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "dist": "build --linux snap"
   },
   "author": "",
   "license": "ISC",
@@ -17,5 +18,8 @@
     "route-parser": "0.0.5",
     "timeago.js": "^4.0.0-beta.2"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "electron": "^2.0.0",
+    "electron-builder": "^20.27.1"
+  }
 }
