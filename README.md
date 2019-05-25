@@ -95,5 +95,5 @@ To execute the appImage.
 
 To install the Snap.
 ```
-sudo snap install ./dist/Bottle_0.0.4_amd64.snap --dangerous
+sudo snap install ./dist/Bottle_0.0.4.snap --dangerous
 ```
