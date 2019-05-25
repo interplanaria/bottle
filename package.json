@@ -26,13 +26,14 @@
     "appId": "network.bitdb.bottle.torusJKL",
     "linux": {
       "target": ["snap","appImage"],
-      "description": "Bottle is a browser that lets you surf the Bitcoin network for these things, and brings them all together through Bitcoin native URI schemes such as B:// or C:// (or any other protocols we add in the future)."
+      "description": "Bottle is a browser that lets you surf the Bitcoin network for these things, and brings them all together through Bitcoin native URI schemes such as B:// or C:// (or any other protocols we add in the future).",
+      "category": "Network",
+      "artifactName": "${productName}_${version}.${ext}"
     }
   },
   "snap": {
     "grade": "stable",
-    "confinement": "strict",
-    "summary": "A Bitcoin Browser"
+    "confinement": "strict"
   },
   "appImage": {
     "systemIntegration": "ask"
