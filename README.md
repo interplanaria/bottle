@@ -60,3 +60,40 @@ npm install
 ```
 npm start
 ```
+
+# How to Build Snap and AppImage on Linux
+
+## 1. Download Electron-Builder
+
+To build the packages we need to install electon-builder.
+
+```
+yarn add electron-builder --dev
+```
+
+## 2. Build
+
+Download the repository and build. First, clone it.
+
+```
+git clone https://github.com/interplanaria/bottle.git
+```
+
+Then build the packages
+
+```
+cd bottle
+npm run dist
+```
+
+## 3. Run
+
+To execute the appImage.
+```
+./dist/Bottle_0.0.4.AppImage
+```
+
+To install the Snap.
+```
+sudo snap install ./dist/Bottle_0.0.4.snap --dangerous
+```
